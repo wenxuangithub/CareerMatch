@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Linking } from "react-native";
-import { MainStackParamList } from "../types/navigation";
+import { MainStackParamList } from "../../types/navigation";
 import { getAuth, signOut } from "firebase/auth";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import {
@@ -50,14 +50,8 @@ export default function ({
         <Section style={{ marginTop: 20 }}>
           <SectionContent>
             <Text fontWeight="bold" style={{ textAlign: "center" }}>
-              These UI components provided by Rapieer UI
+              These UI components provided by Rapi UI
             </Text>
-            <Button
-              style={{ marginTop: 10 }}
-              text="Rapi UI Documentation"
-              status="info"
-              onPress={() => Linking.openURL("https://rapi-ui.kikiding.space/")}
-            />
             <Button
               text="Create an Event"
               onPress={() => {
@@ -68,10 +62,20 @@ export default function ({
               }}
             />
 
-<Button
+            <Button
               text="Test"
               onPress={() => {
                 navigation.navigate("ChatBot");
+              }}
+              style={{
+                marginTop: 10,
+              }}
+            />
+            <Button
+              status="danger"
+              text="Logout"
+              onPress={() => {
+                signOut(auth);
               }}
               style={{
                 marginTop: 10,

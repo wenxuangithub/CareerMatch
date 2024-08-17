@@ -5,11 +5,10 @@ import { themeColor, useTheme } from "react-native-rapi-ui";
 import TabBarIcon from "../components/utils/TabBarIcon";
 import TabBarText from "../components/utils/TabBarText";
 
-import Home from "../screens/student/Home";
-import Profile from "../screens/student/Profile";
+import Home from "../screens/admin/AdminHome";
 
 const Tabs = createBottomTabNavigator();
-const MainTabs = () => {
+const AdminTabs = () => {
   const { isDarkmode } = useTheme();
   return (
     <Tabs.Navigator
@@ -27,22 +26,10 @@ const MainTabs = () => {
         component={Home}
         options={{
           tabBarLabel: ({ focused }) => (
-            <TabBarText focused={focused} title="" />
+            <TabBarText focused={focused} title="Home" />
           ),
           tabBarIcon: ({ focused }) => (
             <TabBarIcon focused={focused} icon={"home"} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="Scan"
-        component={Home}
-        options={{
-          tabBarLabel: ({ focused }) => (
-            <TabBarText focused={focused} title="" />
-          ),
-          tabBarIcon: ({ focused }) => (
-            <TabBarIcon focused={focused} icon={"scan-sharp"} />
           ),
         }}
       />
@@ -51,7 +38,7 @@ const MainTabs = () => {
         component={Home}
         options={{
           tabBarLabel: ({ focused }) => (
-            <TabBarText focused={focused} title="" />
+            <TabBarText focused={focused} title="Notification" />
           ),
           tabBarIcon: ({ focused }) => (
             <TabBarIcon focused={focused} icon={"notifications"} />
@@ -59,14 +46,14 @@ const MainTabs = () => {
         }}
       />
       <Tabs.Screen
-        name="Profile"
-        component={Profile}
+        name="Monitor"
+        component={Home}
         options={{
           tabBarLabel: ({ focused }) => (
-            <TabBarText focused={focused} title="" />
+            <TabBarText focused={focused} title="Monitor" />
           ),
           tabBarIcon: ({ focused }) => (
-            <TabBarIcon focused={focused} icon={"person"} />
+            <TabBarIcon focused={focused} icon={"laptop"} />
           ),
         }}
       />
@@ -74,4 +61,4 @@ const MainTabs = () => {
   );
 };
 
-export default MainTabs;
+export default AdminTabs;

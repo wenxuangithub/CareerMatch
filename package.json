@@ -22,7 +22,9 @@
     "react-native-rapi-ui": "^0.2.1",
     "react-native-web": "~0.19.10",
     "react-dom": "18.2.0",
-    "@expo/metro-runtime": "~3.2.1"
+    "@expo/metro-runtime": "~3.2.1",
+    "expo-image-picker": "~15.0.7",
+    "expo-document-picker": "~12.0.2"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",

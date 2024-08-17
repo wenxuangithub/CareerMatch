@@ -36,6 +36,7 @@ const AppNavigation = () => {
   const auth = useContext(AuthContext);
   const user = auth.user;
 
+
   return (
     <NavigationContainer>
       {user === null && <Loading />}

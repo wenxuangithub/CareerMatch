@@ -5,11 +5,10 @@ import { themeColor, useTheme } from "react-native-rapi-ui";
 import TabBarIcon from "../components/utils/TabBarIcon";
 import TabBarText from "../components/utils/TabBarText";
 
-import Home from "../screens/student/Home";
-import Profile from "../screens/student/Profile";
+import Home from "../screens/employer/EmployerHome";
 
 const Tabs = createBottomTabNavigator();
-const MainTabs = () => {
+const EmployerTabs = () => {
   const { isDarkmode } = useTheme();
   return (
     <Tabs.Navigator
@@ -30,7 +29,19 @@ const MainTabs = () => {
             <TabBarText focused={focused} title="" />
           ),
           tabBarIcon: ({ focused }) => (
-            <TabBarIcon focused={focused} icon={"home"} />
+            <TabBarIcon focused={focused} icon={"accessibility"} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="Search"
+        component={Home}
+        options={{
+          tabBarLabel: ({ focused }) => (
+            <TabBarText focused={focused} title="" />
+          ),
+          tabBarIcon: ({ focused }) => (
+            <TabBarIcon focused={focused} icon={"accessibility"} />
           ),
         }}
       />
@@ -47,20 +58,8 @@ const MainTabs = () => {
         }}
       />
       <Tabs.Screen
-        name="Notification"
-        component={Home}
-        options={{
-          tabBarLabel: ({ focused }) => (
-            <TabBarText focused={focused} title="" />
-          ),
-          tabBarIcon: ({ focused }) => (
-            <TabBarIcon focused={focused} icon={"notifications"} />
-          ),
-        }}
-      />
-      <Tabs.Screen
         name="Profile"
-        component={Profile}
+        component={Home}
         options={{
           tabBarLabel: ({ focused }) => (
             <TabBarText focused={focused} title="" />
@@ -74,4 +73,4 @@ const MainTabs = () => {
   );
 };
 
-export default MainTabs;
+export default EmployerTabs;

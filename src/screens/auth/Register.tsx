@@ -39,6 +39,9 @@ export default function ({
   const [display_name, setDisplayName] = useState<string>("");
   const [gender, setGender] = React.useState("");
   const [confirmPassword, setConfirmPassword] = useState<string>("");
+  const [isEmployer, setIsEmployer] = useState<boolean>(false);
+  const [companyName, setCompanyName] = useState<string>("");
+  const [designation, setDesignation] = useState<string>("");
   const data = [
     { key: "Male", value: "Male" },
     { key: "Female", value: "Female" },
@@ -47,7 +50,7 @@ export default function ({
   const [selectedYear, setSelectedYear] = useState("2020");
   const db = getFirestore();
 
-  //Handle Error
+  // Handle Error
   const [checkDisplayName, setCheckDisplayName] = useState<boolean>(true);
   const [isValidEmail, setValidEmail] = useState<boolean>(true);
   const [checkPassword, setCheckPassword] = useState<boolean>(true);
@@ -64,7 +67,6 @@ export default function ({
 
   const calculatePasswordStrength = (password) => {
     // Implement your logic to calculate password strength here
-    // For simplicity, let's assume weak if the length is less than 6, moderate if less than 10, else strong
     if (password.length < 6) {
       return "Weak";
     } else if (password.length < 10) {
@@ -138,12 +140,14 @@ export default function ({
                   gender: gender,
                   birthDate: selected,
                   tokenId: "-",
+                  role: isEmployer ? "employer" : "student",
+                  company: isEmployer ? companyName : "NaN",
+                  designation: isEmployer ? designation : "NaN",
                 });
               })
               .catch((error) => {
                 var errorCode = error.code;
                 var errorMessage = error.message;
-                // ...
                 setLoading(false);
                 if (Platform.OS === "ios" || Platform.OS === "android")
                   Alert.alert(errorMessage);
@@ -152,10 +156,8 @@ export default function ({
           }
         })
         .catch(function (error: any) {
-          // Handle Errors here.
           var errorCode = error.code;
           var errorMessage = error.message;
-          // ...
           setLoading(false);
 
           if (Platform.OS === "ios" || Platform.OS === "android")
@@ -166,6 +168,7 @@ export default function ({
       alert("Format Error");
     }
   }
+
   return (
     <KeyboardAvoidingView behavior="height" enabled style={{ flex: 1 }}>
       <Layout>
@@ -283,6 +286,53 @@ export default function ({
                 Password does not match !
               </Text>
             )}
+            <Text style={{ marginTop: 15 }}>Are you an employer?</Text>
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                marginTop: 10,
+              }}
+            >
+              <Button
+                text="Yes"
+                onPress={() => setIsEmployer(true)}
+                style={{ flex: 1, marginRight: 5 }}
+                status={isEmployer ? "primary" : "secondary"}
+              />
+              <Button
+                text="No"
+                onPress={() => setIsEmployer(false)}
+                style={{ flex: 1, marginLeft: 5 }}
+                status={!isEmployer ? "primary" : "secondary"}
+              />
+            </View>
+
+            {/* Conditional rendering for employer-specific fields */}
+            {isEmployer && (
+              <>
+                <Text style={{ marginTop: 15 }}>Company Name</Text>
+                <TextInput
+                  containerStyle={{ marginTop: 15 }}
+                  placeholder="Enter your company name"
+                  value={companyName}
+                  autoCorrect={false}
+                  keyboardType="default"
+                  onChangeText={(text) => setCompanyName(text)}
+                />
+
+                <Text style={{ marginTop: 15 }}>Designation</Text>
+                <TextInput
+                  containerStyle={{ marginTop: 15 }}
+                  placeholder="Enter your designation"
+                  value={designation}
+                  autoCorrect={false}
+                  keyboardType="default"
+                  onChangeText={(text) => setDesignation(text)}
+                />
+              </>
+            )}
+
             <Button
               text={loading ? "Loading" : "Create an account"}
               onPress={() => {
@@ -293,6 +343,7 @@ export default function ({
               }}
               disabled={loading}
             />
+
             <View
               style={{
                 flexDirection: "row",
