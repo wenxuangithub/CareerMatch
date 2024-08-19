@@ -40,6 +40,8 @@ export default function ({
   const [personalSummary, setPersonalSummary] = useState("");
   const [education, setEducation] = useState("");
   const [resumeName, setResumeName] = useState("");
+  const [resumeFile, setResumeFile] =
+    useState<DocumentPicker.DocumentResult | null>(null);
   const [location, setLocation] = useState("");
 
   useEffect(() => {
@@ -54,7 +56,7 @@ export default function ({
           setPhone(userData.phone || "");
           setPersonalSummary(userData.personalSummary || "");
           setEducation(userData.education || "");
-          setResumeName(userData.pdfURL ? "Resume Uploaded" : "");
+          setResumeName(userData.resumeName || "");
           setLocation(userData.location || "");
         }
       }
@@ -77,11 +79,18 @@ export default function ({
   };
 
   const pickResume = async () => {
-    const result = await DocumentPicker.getDocumentAsync({
-      type: "application/pdf",
-    });
-    if (result.type === "success") {
-      setResumeName(result.name);
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: "application/pdf",
+      });
+
+      if (result.assets && result.assets.length > 0) {
+        const file = result.assets[0];
+        setResumeName(file.name);
+        setResumeFile(result);
+      }
+    } catch (err) {
+      console.error("Error picking document: ", err);
     }
   };
 
@@ -97,7 +106,7 @@ export default function ({
   const uploadResume = async (uri: string) => {
     const response = await fetch(uri);
     const blob = await response.blob();
-    const filename = `resumes/${auth.currentUser?.uid}/resume.pdf`;
+    const filename = `resumes/${auth.currentUser?.uid}/${resumeName}`;
     const storageRef = ref(storage, filename);
     await uploadBytes(storageRef, blob);
     return await getDownloadURL(storageRef);
@@ -114,8 +123,8 @@ export default function ({
       }
 
       let pdfURL = "";
-      if (resumeName && resumeName !== "Resume Uploaded") {
-        pdfURL = await uploadResume(resumeName);
+      if (resumeFile && resumeFile.assets && resumeFile.assets.length > 0) {
+        pdfURL = await uploadResume(resumeFile.assets[0].uri);
       }
 
       const userRef = doc(db, "user", auth.currentUser.uid);
@@ -126,6 +135,7 @@ export default function ({
         personalSummary,
         education,
         pdfURL,
+        resumeName,
         location,
       });
 
@@ -156,9 +166,10 @@ export default function ({
             source={
               profileImage
                 ? { uri: profileImage }
-                : require("../../../assets/images/login.png")
+                : require("../../../assets/images/defaultpfp.png")
             }
             style={styles.profileImage}
+            defaultSource={require("../../../assets/images/defaultpfp.png")}
           />
           <Text style={styles.changePhotoText}>Change Photo</Text>
         </TouchableOpacity>
@@ -191,8 +202,13 @@ export default function ({
           onChangeText={setEducation}
         />
         <TouchableOpacity style={styles.resumeButton} onPress={pickResume}>
-          <Text>{resumeName || "Upload Resume"}</Text>
+          <Text>{"Upload Resume"}</Text>
         </TouchableOpacity>
+        {resumeName && (
+          <Text style={styles.resumeNameText}>
+            Selected: {resumeName || "Upload a Resume"}
+          </Text>
+        )}
         <TextInput
           containerStyle={styles.input}
           placeholder="Location"
@@ -236,8 +252,13 @@ const styles = StyleSheet.create({
     padding: 15,
     backgroundColor: themeColor.gray200,
     borderRadius: 5,
-    marginBottom: 15,
+    marginBottom: 5,
     alignItems: "center",
+  },
+  resumeNameText: {
+    marginBottom: 15,
+    color: themeColor.gray,
+    fontStyle: "italic",
   },
   saveButton: {
     marginTop: 20,
