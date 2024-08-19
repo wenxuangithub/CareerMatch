@@ -8,6 +8,10 @@ export type MainStackParamList = {
 	EmployerTabs : undefined;
 	AdminTabs : undefined;
 	StudentProfile : undefined;
+	Template : undefined;
+	DigitalCard : {userId : string};
+	EditDigitalCard : {userId : string} ;
+	WebView : {url : string}
 };
 
 

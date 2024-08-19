@@ -9,6 +9,10 @@ import EmployerTabs from "./EmployerTabs";
 import AdminTabs from "./AdminTabs";
 import StudentProfile from "../screens/student/Profile";
 import EditStudentProfile from "../screens/student/EditStudentProfile";
+import Template from "../template";
+import DigitalCard from "../DigitalCard";
+import EditDigitalCard from "../EditDigitalCard";
+import WebView from "../WebView";
 
 const MainStack = createNativeStackNavigator();
 
@@ -57,9 +61,17 @@ const Main = () => {
         <MainStack.Screen name="AdminTabs" component={AdminTabs} />
       )}
       <MainStack.Screen name="StudentProfile" component={StudentProfile} />
-      <MainStack.Screen name="EditStudentProfile" component={EditStudentProfile} />
+      <MainStack.Screen
+        name="EditStudentProfile"
+        component={EditStudentProfile}
+      />
+      <MainStack.Screen name="Template" component={Template} />
+      <MainStack.Screen name="EditDigitalCard" component={EditDigitalCard} />
+      <MainStack.Screen name="DigitalCard" component={DigitalCard} />
+      <MainStack.Screen name="WebView" component={WebView} />
     </MainStack.Navigator>
   );
 };
 
+//<MainStack.Screen name="" component={} />
 export default Main;

@@ -31,6 +31,7 @@ export default function ({
   const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
+
   const fetchUserProfile = useCallback(async () => {
     setLoading(true);
     if (auth.currentUser) {
@@ -38,7 +39,9 @@ export default function ({
         const docRef = doc(db, "user", auth.currentUser.uid);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
-          setUserData(docSnap.data());
+          const data = docSnap.data();
+          setUserData(data);
+
         }
       } catch (error) {
         console.error("Error fetching user data: ", error);
@@ -114,6 +117,12 @@ export default function ({
           style={styles.editButton}
         />
 
+        <Button
+          text={"View Digital Card"}
+          onPress={() => navigation.navigate("DigitalCard", { userId: auth.currentUser?.uid })}
+          style={styles.digitalCardButton}
+        />
+
         <View style={styles.personalSummarySection}>
           <Text fontWeight="bold" style={styles.personalSummaryTitle}>
             Personal Summary
@@ -172,6 +181,9 @@ const styles = StyleSheet.create({
   },
   editButton: {
     marginTop: 20,
+    marginBottom: 20,
+  },
+  digitalCardButton: {
     marginBottom: 20,
   },
   personalSummarySection: {
