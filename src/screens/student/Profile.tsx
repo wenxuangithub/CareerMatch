@@ -20,6 +20,9 @@ import {
   Button,
 } from "react-native-rapi-ui";
 import { useFocusEffect } from "@react-navigation/native";
+import QRCode from 'react-native-qrcode-svg';
+import { useQRCodeEncryption } from '../../hooks/useQRCodeEncryption';
+
 
 export default function ({
   navigation,
@@ -30,6 +33,8 @@ export default function ({
   const db = getFirestore();
   const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [qrValue, setQrValue] = useState<string>('');
+  const { encryptData } = useQRCodeEncryption();
 
 
   const fetchUserProfile = useCallback(async () => {
@@ -41,6 +46,12 @@ export default function ({
         if (docSnap.exists()) {
           const data = docSnap.data();
           setUserData(data);
+          const qrData = JSON.stringify({
+            task: 'viewDigitalCard',
+            data: auth.currentUser.uid
+          });
+          const encryptedData = await encryptData(qrData);
+          setQrValue(encryptedData);
 
         }
       } catch (error) {
@@ -123,6 +134,16 @@ export default function ({
           style={styles.digitalCardButton}
         />
 
+<View style={styles.qrContainer}>
+          <Text style={styles.sectionTitle}>My Digital Card QR Code</Text>
+          {qrValue && (
+            <QRCode
+              value={qrValue}
+              size={200}
+            />
+          )}
+        </View>
+
         <View style={styles.personalSummarySection}>
           <Text fontWeight="bold" style={styles.personalSummaryTitle}>
             Personal Summary
@@ -197,4 +218,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 24,
   },
+  qrContainer: {
+    alignItems: 'center',
+    marginVertical: 20,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  }
 });

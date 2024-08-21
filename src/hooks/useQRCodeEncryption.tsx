@@ -1,24 +1,29 @@
-import { useState } from 'react';
-import * as Crypto from 'expo-crypto';
+import { useState } from "react";
+import * as Crypto from "expo-crypto";
+import { QR_ENCRYPT } from "@env";
 
-const SECRET_KEY = 'your-secret-key'; // Replace with a secure key
+const SECRET_KEY = QR_ENCRYPT; // Replace with a secure key in the .env file
 
 export const useQRCodeEncryption = () => {
   const [error, setError] = useState<string | null>(null);
 
   const xorEncrypt = (text: string, key: string): string => {
-    let result = '';
+    let result = "";
     for (let i = 0; i < text.length; i++) {
-      result += String.fromCharCode(text.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+      result += String.fromCharCode(
+        text.charCodeAt(i) ^ key.charCodeAt(i % key.length)
+      );
     }
     return btoa(result); // Base64 encode the result
   };
 
   const xorDecrypt = (encoded: string, key: string): string => {
     const text = atob(encoded); // Base64 decode
-    let result = '';
+    let result = "";
     for (let i = 0; i < text.length; i++) {
-      result += String.fromCharCode(text.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+      result += String.fromCharCode(
+        text.charCodeAt(i) ^ key.charCodeAt(i % key.length)
+      );
     }
     return result;
   };
@@ -31,8 +36,8 @@ export const useQRCodeEncryption = () => {
       );
       return xorEncrypt(data, hashedKey);
     } catch (err) {
-      setError('Encryption failed');
-      return '';
+      setError("Encryption failed");
+      return "";
     }
   };
 
@@ -44,8 +49,8 @@ export const useQRCodeEncryption = () => {
       );
       return xorDecrypt(encryptedData, hashedKey);
     } catch (err) {
-      setError('Decryption failed');
-      return '';
+      setError("Decryption failed");
+      return "";
     }
   };
 

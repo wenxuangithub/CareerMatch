@@ -11,7 +11,9 @@ export type MainStackParamList = {
 	Template : undefined;
 	DigitalCard : {userId : string};
 	EditDigitalCard : {userId : string} ;
-	WebView : {url : string}
+	WebView : {url : string};
+	SavedCards : undefined;
+	QRScanner : undefined;
 };
 
 

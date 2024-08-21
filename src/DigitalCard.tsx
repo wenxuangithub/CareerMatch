@@ -5,9 +5,11 @@ import {
   TouchableOpacity,
   Image,
   Linking,
+  Alert,
 } from "react-native";
 import { MainStackParamList } from "./types/navigation";
-import { getFirestore, doc, getDoc } from "firebase/firestore";
+import { getFirestore, doc, getDoc, updateDoc, arrayUnion, setDoc } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import {
   Layout,
@@ -32,11 +34,15 @@ export default function ({
 }: NativeStackScreenProps<MainStackParamList, "DigitalCard">) {
   const { isDarkmode, setTheme } = useTheme();
   const db = getFirestore();
+  const auth = getAuth();
   const [cardData, setCardData] = useState<any>(null);
+  const [isOwner, setIsOwner] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
   const { userId } = route.params;
 
   useEffect(() => {
     fetchCardData();
+    checkIfSaved();
   }, [userId]);
 
   const fetchCardData = async () => {
@@ -55,16 +61,78 @@ export default function ({
     } else {
       setCardData(null);
     }
+    setIsOwner(auth.currentUser?.uid === userId);
+  };
+
+  const checkIfSaved = async () => {
+    if (auth.currentUser) {
+      const userRef = doc(db, "user", auth.currentUser.uid);
+      const userSnap = await getDoc(userRef);
+      if (userSnap.exists()) {
+        const userData = userSnap.data();
+        setIsSaved(userData.savedCards && userData.savedCards.some((card: any) => card.userId === userId));
+      }
+    }
+  };
+
+  const handleSaveCard = async () => {
+    if (auth.currentUser) {
+      const userRef = doc(db, "user", auth.currentUser.uid);
+      await updateDoc(userRef, {
+        savedCards: arrayUnion({ userId, name: cardData.name })
+      });
+      
+      // Create notification
+      const notificationRef = doc(db, "Notifications", userId);
+      await setDoc(notificationRef, {
+        userId: userId,
+        content: `${auth.currentUser.displayName} saved your digital card.`,
+        byWho: auth.currentUser.displayName
+      }, { merge: true });
+
+      setIsSaved(true);
+      Alert.alert("Saved", "Digital card saved successfully");
+    }
   };
 
   const handleLinkPress = (url: string) => {
-    // Check if the URL starts with http:// or https://
     if (!/^https?:\/\//i.test(url)) {
       url = "https://" + url;
     }
     Linking.openURL(url).catch((err) =>
       console.error("An error occurred", err)
     );
+  };
+
+  const renderRightAction = () => {
+    if (isOwner) {
+      return (
+        <Ionicons
+          name="pencil"
+          size={20}
+          color={isDarkmode ? themeColor.white100 : themeColor.dark}
+          onPress={() => navigation.navigate("EditDigitalCard", { userId })}
+        />
+      );
+    } else if (isSaved) {
+      return (
+        <Ionicons
+          name="checkmark"
+          size={20}
+          color={isDarkmode ? themeColor.white100 : themeColor.dark}
+          onPress={() => Alert.alert("Already Saved", "This card is already in your saved list.")}
+        />
+      );
+    } else {
+      return (
+        <Ionicons
+          name="add"
+          size={20}
+          color={isDarkmode ? themeColor.white100 : themeColor.dark}
+          onPress={handleSaveCard}
+        />
+      );
+    }
   };
 
   if (!cardData) {
@@ -102,20 +170,13 @@ export default function ({
   }
 
   const colorScheme =
-    colorOptions[cardData.background] || colorOptions["Default"];
+    colorOptions[cardData.background as keyof typeof colorOptions] || colorOptions["Default"];
 
   return (
     <Layout>
       <TopNav
         middleContent="Digital Card"
-        rightContent={
-          <Ionicons
-            name="pencil"
-            size={20}
-            color={isDarkmode ? themeColor.white100 : themeColor.dark}
-          />
-        }
-        rightAction={() => navigation.navigate("EditDigitalCard", { userId })}
+        rightContent={renderRightAction()}
         leftContent={
           <Ionicons
             name="chevron-back"
@@ -141,7 +202,7 @@ export default function ({
           {cardData.email}
         </Text>
 
-        {cardData.links.map((link, index) => (
+        {cardData.links.map((link: any, index: number) => (
           <TouchableOpacity
             key={index}
             style={[styles.linkButton, { backgroundColor: colorScheme.button }]}

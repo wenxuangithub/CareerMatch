@@ -53,9 +53,9 @@ export default function ({
               These UI components provided by Rapi UI
             </Text>
             <Button
-              text="Create an Event"
+              text="Saved Cards"
               onPress={() => {
-                navigation.navigate("CreateEvent");
+                navigation.navigate("SavedCards");
               }}
               style={{
                 marginTop: 10,
@@ -63,9 +63,9 @@ export default function ({
             />
 
             <Button
-              text="Test"
+              text="QRScanner"
               onPress={() => {
-                navigation.navigate("ChatBot");
+                navigation.navigate("QRScanner");
               }}
               style={{
                 marginTop: 10,

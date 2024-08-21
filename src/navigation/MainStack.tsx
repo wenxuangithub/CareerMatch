@@ -13,6 +13,8 @@ import Template from "../template";
 import DigitalCard from "../DigitalCard";
 import EditDigitalCard from "../EditDigitalCard";
 import WebView from "../WebView";
+import QRScanner from "../components/tools/QRScanner";
+import SavedCards from "../SavedCards";
 
 const MainStack = createNativeStackNavigator();
 
@@ -69,6 +71,8 @@ const Main = () => {
       <MainStack.Screen name="EditDigitalCard" component={EditDigitalCard} />
       <MainStack.Screen name="DigitalCard" component={DigitalCard} />
       <MainStack.Screen name="WebView" component={WebView} />
+      <MainStack.Screen name="SavedCards" component={SavedCards} />
+      <MainStack.Screen name="QRScanner" component={QRScanner} />
     </MainStack.Navigator>
   );
 };
