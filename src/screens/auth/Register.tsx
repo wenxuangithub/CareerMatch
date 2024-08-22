@@ -26,7 +26,7 @@ import {
   themeColor,
 } from "react-native-rapi-ui";
 import { fontSize } from "react-native-rapi-ui/constants/typography";
-import { doc, setDoc, getFirestore } from "firebase/firestore";
+import { doc, setDoc, getFirestore, arrayUnion } from "firebase/firestore";
 
 export default function ({
   navigation,
@@ -143,6 +143,19 @@ export default function ({
                   role: isEmployer ? "employer" : "student",
                   company: isEmployer ? companyName : "NaN",
                   designation: isEmployer ? designation : "NaN",
+                });
+                setDoc(doc(db, "Notifications", currentUser.uid), {
+                  notifications: arrayUnion({
+                    timestamp: Date.now().toString(),
+                    id: Date.now().toString(), // use timestamp as a unique id
+                    content: `Welcome to CareerMatch !`,
+                  }),
+                });
+                setDoc(doc(db, "DigitalCard", currentUser.uid), {
+                  name: display_name,
+                  email: email,
+                  background: "Default",
+                  links: [],
                 });
               })
               .catch((error) => {

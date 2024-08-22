@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   StyleSheet,
@@ -6,9 +6,17 @@ import {
   Image,
   Linking,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { MainStackParamList } from "./types/navigation";
-import { getFirestore, doc, getDoc, updateDoc, arrayUnion, setDoc } from "firebase/firestore";
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  updateDoc,
+  arrayUnion,
+  setDoc,
+} from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import {
@@ -20,6 +28,7 @@ import {
   themeColor,
 } from "react-native-rapi-ui";
 import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
 
 const colorOptions = {
   Default: { bg: "#FFFFFF", button: "#000000", text: "#000000" },
@@ -38,14 +47,12 @@ export default function ({
   const [cardData, setCardData] = useState<any>(null);
   const [isOwner, setIsOwner] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const { userId } = route.params;
 
-  useEffect(() => {
-    fetchCardData();
-    checkIfSaved();
-  }, [userId]);
-
-  const fetchCardData = async () => {
+  const fetchCardData = useCallback(async () => {
+    setIsLoading(true);
     const cardRef = doc(db, "DigitalCard", userId);
     const userRef = doc(db, "user", userId);
     const [cardSnap, userSnap] = await Promise.all([
@@ -62,35 +69,53 @@ export default function ({
       setCardData(null);
     }
     setIsOwner(auth.currentUser?.uid === userId);
-  };
+    setIsLoading(false);
+  }, [userId, auth.currentUser]);
 
-  const checkIfSaved = async () => {
+  const checkIfSaved = useCallback(async () => {
     if (auth.currentUser) {
       const userRef = doc(db, "user", auth.currentUser.uid);
       const userSnap = await getDoc(userRef);
       if (userSnap.exists()) {
         const userData = userSnap.data();
-        setIsSaved(userData.savedCards && userData.savedCards.some((card: any) => card.userId === userId));
+        setIsSaved(
+          userData.savedCards &&
+            userData.savedCards.some((card: any) => card.userId === userId)
+        );
       }
     }
-  };
+  }, [userId, auth.currentUser]);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchCardData();
+      checkIfSaved();
+    }, [fetchCardData, checkIfSaved])
+  );
 
   const handleSaveCard = async () => {
     if (auth.currentUser) {
+      setIsSaving(true);
       const userRef = doc(db, "user", auth.currentUser.uid);
       await updateDoc(userRef, {
-        savedCards: arrayUnion({ userId, name: cardData.name })
+        savedCards: arrayUnion({ userId, name: cardData.name }),
       });
-      
+
       // Create notification
       const notificationRef = doc(db, "Notifications", userId);
-      await setDoc(notificationRef, {
-        userId: userId,
+      const newNotification = {
+        id: Date.now().toString(),
         content: `${auth.currentUser.displayName} saved your digital card.`,
-        byWho: auth.currentUser.displayName
-      }, { merge: true });
+        byWho: auth.currentUser.displayName,
+        timestamp: Date.now(),
+      };
+
+      await updateDoc(notificationRef, {
+        notifications: arrayUnion(newNotification),
+      });
 
       setIsSaved(true);
+      setIsSaving(false);
       Alert.alert("Saved", "Digital card saved successfully");
     }
   };
@@ -99,9 +124,7 @@ export default function ({
     if (!/^https?:\/\//i.test(url)) {
       url = "https://" + url;
     }
-    Linking.openURL(url).catch((err) =>
-      console.error("An error occurred", err)
-    );
+    Linking.openURL(url).catch((err) => Alert.alert("An error occurred", err));
   };
 
   const renderRightAction = () => {
@@ -120,11 +143,21 @@ export default function ({
           name="checkmark"
           size={20}
           color={isDarkmode ? themeColor.white100 : themeColor.dark}
-          onPress={() => Alert.alert("Already Saved", "This card is already in your saved list.")}
+          onPress={() =>
+            Alert.alert(
+              "Already Saved",
+              "This card is already in your saved list."
+            )
+          }
         />
       );
     } else {
-      return (
+      return isSaving ? (
+        <ActivityIndicator
+          size="small"
+          color={isDarkmode ? themeColor.white100 : themeColor.dark}
+        />
+      ) : (
         <Ionicons
           name="add"
           size={20}
@@ -135,13 +168,11 @@ export default function ({
     }
   };
 
-  if (!cardData) {
+  if (isLoading) {
     return (
       <Layout>
         <TopNav
           middleContent="Digital Card"
-          rightContent={""}
-          rightAction={() => {}}
           leftContent={
             <Ionicons
               name="chevron-back"
@@ -151,26 +182,16 @@ export default function ({
           }
           leftAction={() => navigation.goBack()}
         />
-        <View
-          style={{
-            flex: 1,
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Text>Don't have a digital card ? Create Now !</Text>
-          <Text></Text>
-          <Button
-            text="Create now !"
-            onPress={() => navigation.navigate("EditDigitalCard", { userId })}
-          ></Button>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={themeColor.primary} />
         </View>
       </Layout>
     );
   }
 
   const colorScheme =
-    colorOptions[cardData.background as keyof typeof colorOptions] || colorOptions["Default"];
+    colorOptions[cardData.background as keyof typeof colorOptions] ||
+    colorOptions["Default"];
 
   return (
     <Layout>
@@ -258,5 +279,10 @@ const styles = StyleSheet.create({
   },
   linkText: {
     fontSize: 16,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
   },
 });

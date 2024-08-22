@@ -1,5 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { View, ScrollView, StyleSheet, TouchableOpacity, Alert } from "react-native";
+import {
+  View,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  Alert,
+} from "react-native";
 import { MainStackParamList } from "./types/navigation";
 import { getFirestore, doc, setDoc, getDoc } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
@@ -16,17 +22,17 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 
 const colorOptions = [
-  { name: 'Default', bg: '#FFFFFF', button: '#000000' },
-  { name: 'Dark Blue', bg: '#1A237E', button: '#3949AB' },
-  { name: 'Dark Green', bg: '#1B5E20', button: '#2E7D32' },
-  { name: 'Dark Purple', bg: '#4A148C', button: '#6A1B9A' },
+  { name: "Default", bg: "#FFFFFF", button: "#000000" },
+  { name: "Dark Blue", bg: "#1A237E", button: "#3949AB" },
+  { name: "Dark Green", bg: "#1B5E20", button: "#2E7D32" },
+  { name: "Dark Purple", bg: "#4A148C", button: "#6A1B9A" },
 ];
 
 const iconOptions = [
-  { name: 'GitHub', icon: 'logo-github' },
-  { name: 'LinkedIn', icon: 'logo-linkedin' },
-  { name: 'Instagram', icon: 'logo-instagram' },
-  { name: 'Link', icon: 'link' },
+  { name: "GitHub", icon: "logo-github" },
+  { name: "LinkedIn", icon: "logo-linkedin" },
+  { name: "Instagram", icon: "logo-instagram" },
+  { name: "Link", icon: "link" },
 ];
 
 export default function ({
@@ -40,9 +46,9 @@ export default function ({
 
   const [selectedColor, setSelectedColor] = useState(colorOptions[0]);
   const [links, setLinks] = useState([]);
-  const [currentIcon, setCurrentIcon] = useState('link');
-  const [currentLinkName, setCurrentLinkName] = useState('');
-  const [currentLinkUrl, setCurrentLinkUrl] = useState('');
+  const [currentIcon, setCurrentIcon] = useState("link");
+  const [currentLinkName, setCurrentLinkName] = useState("");
+  const [currentLinkUrl, setCurrentLinkUrl] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -55,7 +61,9 @@ export default function ({
     if (cardSnap.exists()) {
       const data = cardSnap.data();
       setLinks(data.links || []);
-      setSelectedColor(colorOptions.find(c => c.name === data.background) || colorOptions[0]);
+      setSelectedColor(
+        colorOptions.find((c) => c.name === data.background) || colorOptions[0]
+      );
     }
   };
 
@@ -86,14 +94,17 @@ export default function ({
 
   const addLink = () => {
     if (currentLinkUrl && currentLinkName) {
-      setLinks([...links, { 
-        name: currentLinkName,
-        link: currentLinkUrl,
-        icon: currentIcon 
-      }]);
-      setCurrentIcon('link');
-      setCurrentLinkName('');
-      setCurrentLinkUrl('');
+      setLinks([
+        ...links,
+        {
+          name: currentLinkName,
+          link: currentLinkUrl,
+          icon: currentIcon,
+        },
+      ]);
+      setCurrentIcon("link");
+      setCurrentLinkName("");
+      setCurrentLinkUrl("");
     } else {
       Alert.alert("Error", "Please enter both a name and a URL for the link");
     }
@@ -106,7 +117,10 @@ export default function ({
   };
 
   const moveLink = (index, direction) => {
-    if ((direction === -1 && index > 0) || (direction === 1 && index < links.length - 1)) {
+    if (
+      (direction === -1 && index > 0) ||
+      (direction === 1 && index < links.length - 1)
+    ) {
       const newLinks = [...links];
       const temp = newLinks[index];
       newLinks[index] = newLinks[index + direction];
@@ -134,7 +148,11 @@ export default function ({
           {colorOptions.map((color) => (
             <TouchableOpacity
               key={color.name}
-              style={[styles.colorOption, { backgroundColor: color.bg }, selectedColor.name === color.name && styles.selectedColor]}
+              style={[
+                styles.colorOption,
+                { backgroundColor: color.bg },
+                selectedColor.name === color.name && styles.selectedColor,
+              ]}
               onPress={() => setSelectedColor(color)}
             />
           ))}
@@ -147,9 +165,16 @@ export default function ({
               <TouchableOpacity
                 key={option.name}
                 onPress={() => setCurrentIcon(option.icon)}
-                style={[styles.iconOption, currentIcon === option.icon && styles.selectedIcon]}
+                style={[
+                  styles.iconOption,
+                  currentIcon === option.icon && styles.selectedIcon,
+                ]}
               >
-                <Ionicons name={option.icon} size={24} color={themeColor.primary} />
+                <Ionicons
+                  name={option.icon}
+                  size={24}
+                  color={themeColor.primary}
+                />
               </TouchableOpacity>
             ))}
           </View>
@@ -173,20 +198,38 @@ export default function ({
         <Text style={styles.sectionTitle}>Your Links</Text>
         {links.map((link, index) => (
           <View key={index} style={styles.linkItem}>
-            <Ionicons name={link.icon} size={24} color={themeColor.primary} style={styles.linkIcon} />
+            <Ionicons
+              name={link.icon}
+              size={24}
+              color={themeColor.primary}
+              style={styles.linkIcon}
+            />
             <View style={styles.linkTextContainer}>
               <Text style={styles.linkName}>{link.name}</Text>
               <Text style={styles.linkUrl}>{link.link}</Text>
             </View>
             <View style={styles.linkActions}>
-              <TouchableOpacity onPress={() => moveLink(index, -1)} style={styles.actionButton}>
+              <TouchableOpacity
+                onPress={() => moveLink(index, -1)}
+                style={styles.actionButton}
+              >
                 <Ionicons name="arrow-up" size={24} color={themeColor.gray} />
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => moveLink(index, 1)} style={styles.actionButton}>
+              <TouchableOpacity
+                onPress={() => moveLink(index, 1)}
+                style={styles.actionButton}
+              >
                 <Ionicons name="arrow-down" size={24} color={themeColor.gray} />
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => removeLink(index)} style={styles.actionButton}>
-                <Ionicons name="close-circle" size={24} color={themeColor.danger} />
+              <TouchableOpacity
+                onPress={() => removeLink(index)}
+                style={styles.actionButton}
+              >
+                <Ionicons
+                  name="close-circle"
+                  size={24}
+                  color={themeColor.danger}
+                />
               </TouchableOpacity>
             </View>
           </View>
@@ -210,12 +253,12 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginVertical: 10,
   },
   colorContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+    flexDirection: "row",
+    justifyContent: "space-around",
     marginBottom: 20,
   },
   colorOption: {
@@ -223,7 +266,7 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
     borderWidth: 2,
-    borderColor: 'transparent',
+    borderColor: "transparent",
   },
   selectedColor: {
     borderColor: themeColor.primary,
@@ -232,8 +275,8 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   iconContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+    flexDirection: "row",
+    justifyContent: "space-around",
     marginBottom: 10,
   },
   iconOption: {
@@ -253,8 +296,8 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   linkItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: themeColor.gray200,
@@ -266,14 +309,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   linkName: {
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   linkUrl: {
     fontSize: 12,
     color: themeColor.gray,
   },
   linkActions: {
-    flexDirection: 'row',
+    flexDirection: "row",
   },
   actionButton: {
     padding: 5,

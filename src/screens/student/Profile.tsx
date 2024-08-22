@@ -20,9 +20,8 @@ import {
   Button,
 } from "react-native-rapi-ui";
 import { useFocusEffect } from "@react-navigation/native";
-import QRCode from 'react-native-qrcode-svg';
-import { useQRCodeEncryption } from '../../hooks/useQRCodeEncryption';
-
+import QRCode from "react-native-qrcode-svg";
+import { useQRCodeEncryption } from "../../hooks/useQRCodeEncryption";
 
 export default function ({
   navigation,
@@ -33,9 +32,8 @@ export default function ({
   const db = getFirestore();
   const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const [qrValue, setQrValue] = useState<string>('');
+  const [qrValue, setQrValue] = useState<string>("");
   const { encryptData } = useQRCodeEncryption();
-
 
   const fetchUserProfile = useCallback(async () => {
     setLoading(true);
@@ -47,12 +45,11 @@ export default function ({
           const data = docSnap.data();
           setUserData(data);
           const qrData = JSON.stringify({
-            task: 'viewDigitalCard',
-            data: auth.currentUser.uid
+            task: "viewDigitalCard",
+            data: auth.currentUser.uid,
           });
           const encryptedData = await encryptData(qrData);
           setQrValue(encryptedData);
-
         }
       } catch (error) {
         console.error("Error fetching user data: ", error);
@@ -70,9 +67,24 @@ export default function ({
 
   if (loading) {
     return (
+      <Layout>
+        <TopNav
+        middleContent="Student Profile"
+        rightContent={
+          <Ionicons
+            name={isDarkmode ? "sunny" : "moon"}
+            size={20}
+            color={isDarkmode ? themeColor.white100 : themeColor.dark}
+          />
+        }
+        rightAction={() => {
+          setTheme(isDarkmode ? "light" : "dark");
+        }}
+      />
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={themeColor.primary} />
-      </View>
+      <ActivityIndicator size="large" color={themeColor.primary} />
+    </View>
+    </Layout>
     );
   }
 
@@ -130,18 +142,17 @@ export default function ({
 
         <Button
           text={"View Digital Card"}
-          onPress={() => navigation.navigate("DigitalCard", { userId: auth.currentUser?.uid })}
+          onPress={() =>
+            navigation.navigate("DigitalCard", {
+              userId: auth.currentUser?.uid,
+            })
+          }
           style={styles.digitalCardButton}
         />
 
-<View style={styles.qrContainer}>
+        <View style={styles.qrContainer}>
           <Text style={styles.sectionTitle}>My Digital Card QR Code</Text>
-          {qrValue && (
-            <QRCode
-              value={qrValue}
-              size={200}
-            />
-          )}
+          {qrValue && <QRCode value={qrValue} size={200} />}
         </View>
 
         <View style={styles.personalSummarySection}>
@@ -219,12 +230,12 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
   qrContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     marginVertical: 20,
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 10,
-  }
+  },
 });

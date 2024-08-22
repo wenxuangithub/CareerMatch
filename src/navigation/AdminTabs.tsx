@@ -35,7 +35,7 @@ const AdminTabs = () => {
       />
       <Tabs.Screen
         name="Notification"
-        component={Home}
+        component={Notification}
         options={{
           tabBarLabel: ({ focused }) => (
             <TabBarText focused={focused} title="Notification" />

@@ -7,6 +7,8 @@ import TabBarText from "../components/utils/TabBarText";
 
 import Home from "../screens/student/Home";
 import Profile from "../screens/student/Profile";
+import Notification from "../Notification";
+import QRScanner from "../components/tools/QRScanner";
 
 const Tabs = createBottomTabNavigator();
 const MainTabs = () => {
@@ -36,10 +38,10 @@ const MainTabs = () => {
       />
       <Tabs.Screen
         name="Scan"
-        component={Home}
+        component={QRScanner}
         options={{
           tabBarLabel: ({ focused }) => (
-            <TabBarText focused={focused} title="" />
+            <TabBarText focused={focused} title="Scan" />
           ),
           tabBarIcon: ({ focused }) => (
             <TabBarIcon focused={focused} icon={"scan-sharp"} />
@@ -48,7 +50,7 @@ const MainTabs = () => {
       />
       <Tabs.Screen
         name="Notification"
-        component={Home}
+        component={Notification}
         options={{
           tabBarLabel: ({ focused }) => (
             <TabBarText focused={focused} title="" />

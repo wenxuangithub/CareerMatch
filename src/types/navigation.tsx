@@ -14,6 +14,7 @@ export type MainStackParamList = {
 	WebView : {url : string};
 	SavedCards : undefined;
 	QRScanner : undefined;
+	Notification: undefined;
 };
 
 
