@@ -6,6 +6,7 @@ import TabBarIcon from "../components/utils/TabBarIcon";
 import TabBarText from "../components/utils/TabBarText";
 
 import Home from "../screens/admin/AdminHome";
+import Notification from "../Notification";
 
 const Tabs = createBottomTabNavigator();
 const AdminTabs = () => {

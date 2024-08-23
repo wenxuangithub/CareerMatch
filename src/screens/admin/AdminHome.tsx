@@ -55,7 +55,7 @@ export default function ({
             <Button
               text="Create an Event"
               onPress={() => {
-                navigation.navigate("CreateEvent");
+                navigation.navigate("EventCreation");
               }}
               style={{
                 marginTop: 10,
@@ -63,9 +63,9 @@ export default function ({
             />
 
             <Button
-              text="Test"
+              text="Manage Events"
               onPress={() => {
-                navigation.navigate("ChatBot");
+                navigation.navigate("AdminEventList");
               }}
               style={{
                 marginTop: 10,

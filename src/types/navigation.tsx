@@ -15,6 +15,10 @@ export type MainStackParamList = {
 	SavedCards : undefined;
 	QRScanner : undefined;
 	Notification: undefined;
+	EventRegistration : {eventId : string};
+	EventCreation : undefined;
+	AdminEventList: undefined;
+  	AdminEventPanel: { eventId: string };
 };
 
 

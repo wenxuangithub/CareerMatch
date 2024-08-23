@@ -53,10 +53,10 @@ export default function ({
               Welcome To EmployerHub
             </Text>
             <Button
-              text="Create an Event"
-              onPress={() => {
-                navigation.navigate("CreateEvent");
-              }}
+             text="Event Registration"
+             onPress={() => {
+               navigation.navigate("EventListForRegistration");
+             }}
               style={{
                 marginTop: 10,
               }}

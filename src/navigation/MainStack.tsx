@@ -16,6 +16,11 @@ import WebView from "../WebView";
 import QRScanner from "../components/tools/QRScanner";
 import SavedCards from "../SavedCards";
 import Notification from "../Notification";
+import EventCreation from "../screens/admin/EventCreation";
+import EventRegistration from "../screens/employer/EventRegistration";
+import EventListForRegistration from "../screens/employer/EventListForRegistration";
+import AdminEventList from "../screens/admin/AdminEventList";
+import AdminEventPanel from "../screens/admin/AdminEventPanel";
 
 const MainStack = createNativeStackNavigator();
 
@@ -75,6 +80,11 @@ const Main = () => {
       <MainStack.Screen name="SavedCards" component={SavedCards} />
       <MainStack.Screen name="QRScanner" component={QRScanner} />
       <MainStack.Screen name="Notification" component={Notification} />
+      <MainStack.Screen name="EventCreation" component={EventCreation} />
+      <MainStack.Screen name="EventRegistration" component={EventRegistration} />
+      <MainStack.Screen name="EventListForRegistration" component={EventListForRegistration} />
+      <MainStack.Screen name="AdminEventList" component={AdminEventList} />
+      <MainStack.Screen name="AdminEventPanel" component={AdminEventPanel} />
     </MainStack.Navigator>
   );
 };
