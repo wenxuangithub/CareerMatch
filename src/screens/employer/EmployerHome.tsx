@@ -63,9 +63,9 @@ export default function ({
             />
 
             <Button
-              text="Test"
+              text="Registered Event"
               onPress={() => {
-                navigation.navigate("ChatBot");
+                navigation.navigate("EmployerEventList");
               }}
               style={{
                 marginTop: 10,

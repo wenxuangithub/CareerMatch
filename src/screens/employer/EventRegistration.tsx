@@ -1,526 +1,359 @@
-import React, { useState, useEffect } from "react";
-import {
-  View,
-  StyleSheet,
-  Alert,
-  Modal,
-  TouchableOpacity,
-  FlatList,
-  Image,
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  Keyboard,
-} from "react-native";
-import {
-  Layout,
-  TopNav,
-  Text,
-  TextInput,
-  Button,
-  useTheme,
-  Section,
-} from "react-native-rapi-ui";
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, FlatList, TouchableOpacity, Modal, Alert, ActivityIndicator, Dimensions } from 'react-native';
+import { Layout, Text, TopNav, useTheme, themeColor, Button, TextInput } from "react-native-rapi-ui";
 import { Ionicons } from "@expo/vector-icons";
-import {
-  getFirestore,
-  doc,
-  getDoc,
-  collection,
-  addDoc,
-  query,
-  where,
-  getDocs,
-} from "firebase/firestore";
-import { getAuth } from "firebase/auth";
+import { getFirestore, doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import * as DocumentPicker from 'expo-document-picker';
+import * as ImagePicker from 'expo-image-picker';
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { MainStackParamList } from "../../types/navigation";
 
-type Company = {
-  id: string;
-  name: string;
-  registrationNumber: string;
-  officeTelephone: string;
+type Document = {
+  type: 'pdf' | 'image' | 'embed link';
+  content: string;
 };
 
-type Event = {
-  id: string;
-  name: string;
-  description: string;
+type Job = {
+  role: string;
   location: string;
-  venue: string;
-  startDate: string;
-  endDate: string;
-  coverPhotoUrl?: string;
+  classification: string;
+  descriptions: string;
+  time: string;
 };
 
-type ListItem =
-  | { type: "event"; data: Event }
-  | {
-      type: "input";
-      id: string;
-      label: string;
-      value: string;
-      onChangeText: (text: string) => void;
-    }
-  | {
-      type: "button";
-      id: string;
-      label: string;
-      onPress: () => void;
-      disabled?: boolean;
-    }
-  | { type: "companyList"; data: Company[] }
-  | { type: "selectedCompany"; company: Company };
+type EventData = {
+  eventId: string;
+  companyId: string;
+  documents: Document[];
+  jobs: Job[];
+};
 
-export default function EventRegistration({
+const { width, height } = Dimensions.get('window');
+
+export default function EmployerEventPanel({
   route,
   navigation,
-}: NativeStackScreenProps<MainStackParamList, "EventRegistration">) {
+}: NativeStackScreenProps<MainStackParamList, "EmployerEventPanel">) {
   const { isDarkmode } = useTheme();
-  const { eventId } = route.params;
-  const [event, setEvent] = useState<Event | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [companySearch, setCompanySearch] = useState("");
-  const [companies, setCompanies] = useState<Company[]>([]);
-  const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
-  const [showNewCompanyModal, setShowNewCompanyModal] = useState(false);
-  const [newCompany, setNewCompany] = useState<Omit<Company, "id">>({
-    name: "",
-    registrationNumber: "",
-    officeTelephone: "",
-  });
-  const [isRegistering, setIsRegistering] = useState(false);
-  const [isCreatingCompany, setIsCreatingCompany] = useState(false);
-  const [isSearchingCompany, setIsSearchingCompany] = useState(false);
+  const { eventId, companyId } = route.params;
+  const [eventData, setEventData] = useState<EventData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showDocumentModal, setShowDocumentModal] = useState(false);
+  const [showJobModal, setShowJobModal] = useState(false);
+  const [newDocument, setNewDocument] = useState<Document>({ type: 'pdf', content: '' });
+  const [newJob, setNewJob] = useState<Job>({ role: '', location: '', classification: '', descriptions: '', time: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const db = getFirestore();
-  const auth = getAuth();
-
-  const [keyboardStatus, setKeyboardStatus] = useState(false);
+  const storage = getStorage();
 
   useEffect(() => {
-    const showSubscription = Keyboard.addListener("keyboardDidShow", () => {
-      setKeyboardStatus(true);
-    });
-    const hideSubscription = Keyboard.addListener("keyboardDidHide", () => {
-      setKeyboardStatus(false);
-    });
-
-    return () => {
-      showSubscription.remove();
-      hideSubscription.remove();
-    };
+    fetchEventData();
   }, []);
 
-  useEffect(() => {
-    fetchEvent();
-  }, []);
-
-  useEffect(() => {
-    if (companySearch.length > 2) {
-      searchCompanies();
-    } else {
-      setCompanies([]);
-    }
-  }, [companySearch]);
-
-  const fetchEvent = async () => {
-    setLoading(true);
+  const fetchEventData = async () => {
     try {
-      const eventDoc = await getDoc(doc(db, "events", eventId));
-      if (eventDoc.exists()) {
-        setEvent({ id: eventDoc.id, ...eventDoc.data() } as Event);
+      const eventDocRef = doc(db, "employerEventData", `${eventId}_${companyId}`);
+      const eventDocSnap = await getDoc(eventDocRef);
+      
+      if (eventDocSnap.exists()) {
+        setEventData(eventDocSnap.data() as EventData);
       } else {
-        Alert.alert("Error", "Event not found");
-        navigation.goBack();
+        // Initialize with empty arrays if document doesn't exist
+        setEventData({
+          eventId,
+          companyId,
+          documents: [],
+          jobs: []
+        });
       }
     } catch (error) {
-      console.error("Error fetching event: ", error);
-      Alert.alert("Error", "Failed to fetch event details");
+      console.error("Error fetching event data:", error);
+      Alert.alert("Error", "Failed to fetch event data");
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  const searchCompanies = async () => {
-    setIsSearchingCompany(true);
+  const handleAddDocument = async () => {
+    setIsSubmitting(true);
     try {
-      const companiesRef = collection(db, "companies");
-      const q = query(
-        companiesRef,
-        where("name", ">=", companySearch.toLowerCase()),
-        where("name", "<=", companySearch.toLowerCase() + "\uf8ff")
-      );
-      const querySnapshot = await getDocs(q);
-      const companyList: Company[] = querySnapshot.docs.map(
-        (doc) => ({ id: doc.id, ...doc.data() } as Company)
-      );
-      setCompanies(companyList);
+      if (!eventData) return;
+
+      let content = '';
+      if (newDocument.type === 'pdf') {
+        const result = await DocumentPicker.getDocumentAsync({ type: 'application/pdf' });
+        if (result.type === 'success') {
+          content = await uploadFile(result.uri, 'pdf');
+        }
+      } else if (newDocument.type === 'image') {
+        const result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          allowsEditing: true,
+          aspect: [4, 3],
+          quality: 1,
+        });
+        if (!result.canceled && result.assets[0].uri) {
+          content = await uploadFile(result.assets[0].uri, 'image');
+        }
+      } else {
+        content = newDocument.content; // For embed links, use the content directly
+      }
+
+      if (content) {
+        const updatedDocuments = [...eventData.documents, { ...newDocument, content }];
+        await updateEventData({ ...eventData, documents: updatedDocuments });
+        setNewDocument({ type: 'pdf', content: '' });
+        setShowDocumentModal(false);
+      }
     } catch (error) {
-      console.error("Error searching companies: ", error);
-      Alert.alert("Error", "Failed to search companies");
+      console.error("Error adding document:", error);
+      Alert.alert("Error", "Failed to add document");
     } finally {
-      setIsSearchingCompany(false);
+      setIsSubmitting(false);
     }
   };
 
-  const handleCreateCompany = async () => {
-    if (
-      !newCompany.name ||
-      !newCompany.registrationNumber ||
-      !newCompany.officeTelephone
-    ) {
-      Alert.alert("Error", "Please fill in all company details");
-      return;
-    }
-
-    setIsCreatingCompany(true);
+  const handleAddJob = async () => {
+    setIsSubmitting(true);
     try {
-      const companiesRef = collection(db, "companies");
-      const docRef = await addDoc(companiesRef, {
-        ...newCompany,
-        name: newCompany.name.toLowerCase(),
-        createdBy: auth.currentUser?.uid,
-        createdAt: new Date().toISOString(),
-      });
-      const createdCompany = { id: docRef.id, ...newCompany };
-      setSelectedCompany(createdCompany);
-      setShowNewCompanyModal(false);
+      if (!eventData) return;
+
+      const updatedJobs = [...eventData.jobs, newJob];
+      await updateEventData({ ...eventData, jobs: updatedJobs });
+      setNewJob({ role: '', location: '', classification: '', descriptions: '', time: '' });
+      setShowJobModal(false);
     } catch (error) {
-      console.error("Error creating company: ", error);
-      Alert.alert("Error", "Failed to create company");
+      console.error("Error adding job:", error);
+      Alert.alert("Error", "Failed to add job");
     } finally {
-      setIsCreatingCompany(false);
+      setIsSubmitting(false);
     }
   };
 
-  const handleRegister = async () => {
-    if (!selectedCompany) {
-      Alert.alert("Error", "Please select or create a company");
-      return;
-    }
-
-    if (!auth.currentUser) {
-      Alert.alert("Error", "You must be logged in to register");
-      return;
-    }
-
-    setIsRegistering(true);
-    try {
-      await addDoc(collection(db, "eventRegistrations"), {
-        eventId,
-        companyId: selectedCompany.id,
-        userId: auth.currentUser.uid,
-        status: "pending",
-        createdAt: new Date().toISOString(),
-      });
-
-      Alert.alert("Success", "Registration submitted successfully");
-      navigation.goBack();
-    } catch (error) {
-      console.error("Error registering: ", error);
-      Alert.alert("Error", "Failed to register for event");
-    } finally {
-      setIsRegistering(false);
-    }
+  const uploadFile = async (uri: string, type: 'pdf' | 'image'): Promise<string> => {
+    const response = await fetch(uri);
+    const blob = await response.blob();
+    const filename = uri.substring(uri.lastIndexOf('/') + 1);
+    const storageRef = ref(storage, `${type}s/${eventId}_${companyId}/${filename}`);
+    await uploadBytes(storageRef, blob);
+    return await getDownloadURL(storageRef);
   };
 
-  const renderItem = ({ item }: { item: ListItem }) => {
-    switch (item.type) {
-      case "event":
-        return (
-          <View style={styles.eventContainer}>
-            {item.data.coverPhotoUrl && (
-              <Image
-                source={{ uri: item.data.coverPhotoUrl }}
-                style={styles.coverPhoto}
-              />
-            )}
-            <Text style={styles.eventName}>{item.data.name}</Text>
-            <Text style={styles.eventDescription}>{item.data.description}</Text>
-            <Text style={styles.eventDetail}>
-              Location: {item.data.location}
-            </Text>
-            <Text style={styles.eventDetail}>Venue: {item.data.venue}</Text>
-            <Text style={styles.eventDetail}>
-              Start: {new Date(item.data.startDate).toLocaleString()}
-            </Text>
-            <Text style={styles.eventDetail}>
-              End: {new Date(item.data.endDate).toLocaleString()}
-            </Text>
-          </View>
-        );
-      case "input":
-        return (
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>{item.label}</Text>
-            <TextInput
-              value={item.value}
-              onChangeText={item.onChangeText}
-              style={styles.input}
-            />
-          </View>
-        );
-      case "button":
-        return (
-          <Button
-            text={item.label}
-            onPress={item.onPress}
-            style={styles.button}
-            disabled={item.disabled}
-          />
-        );
-      case "companyList":
-        return (
-          <FlatList
-            data={item.data}
-            keyExtractor={(company) => company.id}
-            renderItem={({ item: company }) => (
-              <TouchableOpacity
-                style={styles.companyItem}
-                onPress={() => setSelectedCompany(company)}
-              >
-                <Text>{company.name}</Text>
-                <Text style={styles.companyDetail}>
-                  {company.registrationNumber}
-                </Text>
-              </TouchableOpacity>
-            )}
-          />
-        );
-      case "selectedCompany":
-        return (
-          <View style={styles.selectedCompany}>
-            <Text style={styles.selectedCompanyText}>Selected Company:</Text>
-            <Text>{item.company.name}</Text>
-            <Text>{item.company.registrationNumber}</Text>
-          </View>
-        );
-      default:
-        return null;
-    }
+  const updateEventData = async (newData: EventData) => {
+    const eventDocRef = doc(db, "employerEventData", `${eventId}_${companyId}`);
+    await setDoc(eventDocRef, newData);
+    setEventData(newData);
   };
 
-  const listData: ListItem[] = [
-    ...(event ? [{ type: "event", data: event }] : []),
-    {
-      type: "input",
-      id: "companySearch",
-      label: "Search Company",
-      value: companySearch,
-      onChangeText: setCompanySearch,
-    },
-    ...(companies.length > 0 ? [{ type: "companyList", data: companies }] : []),
-    ...(companySearch.length > 2 && companies.length === 0
-      ? [
-          {
-            type: "button",
-            id: "createCompany",
-            label: "Create New Company",
-            onPress: () => setShowNewCompanyModal(true),
-          },
-        ]
-      : []),
-    ...(selectedCompany
-      ? [{ type: "selectedCompany", company: selectedCompany }]
-      : []),
-    {
-      type: "button",
-      id: "register",
-      label: isRegistering ? "Registering..." : "Register for Event",
-      onPress: handleRegister,
-      disabled: isRegistering || !selectedCompany,
-    },
-  ];
+  const renderDocumentItem = ({ item }: { item: Document }) => (
+    <View style={styles.listItem}>
+      <Text>{item.type}</Text>
+      <Text>{item.content.substring(0, 30)}...</Text>
+    </View>
+  );
 
-  if (loading) {
-    return (
-      <Layout>
-        <TopNav
-          middleContent="Event Registration"
-          leftContent={
-            <Ionicons
-              name="chevron-back"
-              size={20}
-              color={isDarkmode ? "white" : "black"}
-            />
-          }
-          leftAction={() => navigation.goBack()}
-        />
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator
-            size="large"
-            color={isDarkmode ? "white" : "black"}
-          />
-        </View>
-      </Layout>
-    );
-  }
+  const renderJobItem = ({ item }: { item: Job }) => (
+    <View style={styles.listItem}>
+      <Text>{item.role}</Text>
+      <Text>{item.location}</Text>
+      <Text>{item.classification}</Text>
+    </View>
+  );
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={{ flex: 1 }}
-    >
-      <Layout>
-        <TopNav
-          middleContent="Event Registration"
-          leftContent={
-            <Ionicons
-              name="chevron-back"
-              size={20}
-              color={isDarkmode ? "white" : "black"}
+    <Layout>
+      <TopNav
+        middleContent="Event Panel"
+        leftContent={
+          <Ionicons
+            name="chevron-back"
+            size={20}
+            color={isDarkmode ? themeColor.white100 : themeColor.dark}
+          />
+        }
+        leftAction={() => navigation.goBack()}
+      />
+      {isLoading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={themeColor.primary} />
+        </View>
+      ) : (
+        <View style={styles.container}>
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Documents</Text>
+            <Button
+              text="Add Document"
+              onPress={() => setShowDocumentModal(true)}
+              style={styles.addButton}
             />
-          }
-          leftAction={() => navigation.goBack()}
-        />
-        <FlatList
-          data={listData}
-          renderItem={renderItem}
-          keyExtractor={(item, index) => `${item.type}-${index}`}
-          contentContainerStyle={[
-            styles.container,
-            { paddingBottom: keyboardStatus ? 120 : 20 },
-          ]}
-          keyboardShouldPersistTaps="handled"
-        />
-
-        <Modal
-          visible={showNewCompanyModal}
-          transparent={true}
-          animationType="slide"
-        >
-          <View style={styles.modalContainer}>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Create New Company</Text>
-              <TextInput
-                placeholder="Company Name"
-                value={newCompany.name}
-                onChangeText={(text) =>
-                  setNewCompany({ ...newCompany, name: text })
-                }
-                style={styles.input}
-              />
-              <TextInput
-                placeholder="Registration Number"
-                value={newCompany.registrationNumber}
-                onChangeText={(text) =>
-                  setNewCompany({ ...newCompany, registrationNumber: text })
-                }
-                style={styles.input}
-              />
-              <TextInput
-                placeholder="Office Telephone"
-                value={newCompany.officeTelephone}
-                onChangeText={(text) =>
-                  setNewCompany({ ...newCompany, officeTelephone: text })
-                }
-                style={styles.input}
-                keyboardType="phone-pad"
-              />
-              <Button
-                text={isCreatingCompany ? "Creating..." : "Create Company"}
-                onPress={handleCreateCompany}
-                style={styles.button}
-                disabled={isCreatingCompany}
-              />
-              <Button
-                text="Cancel"
-                status="danger"
-                onPress={() => setShowNewCompanyModal(false)}
-                style={styles.button}
-              />
-            </View>
+            <FlatList
+              data={eventData?.documents}
+              renderItem={renderDocumentItem}
+              keyExtractor={(item, index) => index.toString()}
+              ListEmptyComponent={<Text>No documents added yet</Text>}
+            />
           </View>
-        </Modal>
-      </Layout>
-    </KeyboardAvoidingView>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Job Roles</Text>
+            <Button
+              text="Add Job Role"
+              onPress={() => setShowJobModal(true)}
+              style={styles.addButton}
+            />
+            <FlatList
+              data={eventData?.jobs}
+              renderItem={renderJobItem}
+              keyExtractor={(item, index) => index.toString()}
+              ListEmptyComponent={<Text>No job roles added yet</Text>}
+            />
+          </View>
+        </View>
+      )}
+
+      <Modal visible={showDocumentModal} animationType="slide" transparent={true}>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Add Document</Text>
+            <Button
+              text={`Type: ${newDocument.type}`}
+              onPress={() => setNewDocument({...newDocument, type: newDocument.type === 'pdf' ? 'image' : newDocument.type === 'image' ? 'embed link' : 'pdf'})}
+              style={styles.modalButton}
+            />
+            {newDocument.type === 'embed link' && (
+              <TextInput
+                placeholder="Embed Link"
+                value={newDocument.content}
+                onChangeText={(text) => setNewDocument({...newDocument, content: text})}
+                style={styles.input}
+              />
+            )}
+            <Button
+              text={isSubmitting ? "Adding..." : "Add Document"}
+              onPress={handleAddDocument}
+              disabled={isSubmitting}
+              style={styles.modalButton}
+            />
+            <Button
+              text="Cancel"
+              status="danger"
+              onPress={() => setShowDocumentModal(false)}
+              style={styles.modalButton}
+            />
+          </View>
+        </View>
+      </Modal>
+
+      <Modal visible={showJobModal} animationType="slide" transparent={true}>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Add Job Role</Text>
+            <TextInput
+              placeholder="Role"
+              value={newJob.role}
+              onChangeText={(text) => setNewJob({...newJob, role: text})}
+              style={styles.input}
+            />
+            <TextInput
+              placeholder="Location"
+              value={newJob.location}
+              onChangeText={(text) => setNewJob({...newJob, location: text})}
+              style={styles.input}
+            />
+            <TextInput
+              placeholder="Classification"
+              value={newJob.classification}
+              onChangeText={(text) => setNewJob({...newJob, classification: text})}
+              style={styles.input}
+            />
+            <TextInput
+              placeholder="Description"
+              value={newJob.descriptions}
+              onChangeText={(text) => setNewJob({...newJob, descriptions: text})}
+              style={styles.input}
+              multiline
+            />
+            <TextInput
+              placeholder="Time"
+              value={newJob.time}
+              onChangeText={(text) => setNewJob({...newJob, time: text})}
+              style={styles.input}
+            />
+            <Button
+              text={isSubmitting ? "Adding..." : "Add Job Role"}
+              onPress={handleAddJob}
+              disabled={isSubmitting}
+              style={styles.modalButton}
+            />
+            <Button
+              text="Cancel"
+              status="danger"
+              onPress={() => setShowJobModal(false)}
+              style={styles.modalButton}
+            />
+          </View>
+        </View>
+      </Modal>
+    </Layout>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
+    flex: 1,
+    padding: 16,
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  eventContainer: {
-    marginBottom: 20,
+  section: {
+    marginBottom: 24,
   },
-  coverPhoto: {
-    width: "100%",
-    height: 200,
-    resizeMode: "cover",
-    borderRadius: 10,
-    marginBottom: 10,
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 12,
   },
-  eventName: {
-    fontSize: 24,
-    fontWeight: "bold",
-    textAlign: "center",
-    marginBottom: 10,
+  addButton: {
+    marginBottom: 12,
   },
-  eventDescription: {
-    fontSize: 16,
-    marginBottom: 10,
-  },
-  eventDetail: {
-    fontSize: 14,
-    marginBottom: 5,
-  },
-  inputContainer: {
-    marginBottom: 15,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 5,
-  },
-  input: {
-    marginBottom: 15,
-  },
-  button: {
-    marginTop: 10,
-  },
-  companyItem: {
-    padding: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "#ccc",
-  },
-  companyDetail: {
-    fontSize: 12,
-    color: "#666",
-  },
-  selectedCompany: {
-    marginTop: 15,
-    padding: 10,
-    backgroundColor: "#f0f0f0",
-    borderRadius: 5,
-  },
-  selectedCompanyText: {
-    fontWeight: "bold",
-    marginBottom: 5,
+  listItem: {
+    backgroundColor: '#f0f0f0',
+    padding: 12,
+    marginBottom: 8,
+    borderRadius: 8,
   },
   modalContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
   },
   modalContent: {
-    backgroundColor: "white",
+    backgroundColor: '#333',
     padding: 20,
-    borderRadius: 10,
-    width: "80%",
+    borderRadius: 8,
+    width: width * 0.9,
+    maxHeight: height * 0.8,
   },
   modalTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 15,
-    textAlign: "center",
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 16,
+    color: '#fff',
+  },
+  input: {
+    backgroundColor: '#444',
+    borderRadius: 4,
+    padding: 8,
+    marginBottom: 12,
+    color: '#fff',
+  },
+  modalButton: {
+    marginTop: 8,
   },
 });

@@ -21,6 +21,9 @@ import EventRegistration from "../screens/employer/EventRegistration";
 import EventListForRegistration from "../screens/employer/EventListForRegistration";
 import AdminEventList from "../screens/admin/AdminEventList";
 import AdminEventPanel from "../screens/admin/AdminEventPanel";
+import EmployerEventList from "../screens/employer/EmployerEventList";
+import EmployerEventPanel from "../screens/employer/EmployerEventPanel";
+
 
 const MainStack = createNativeStackNavigator();
 
@@ -85,6 +88,8 @@ const Main = () => {
       <MainStack.Screen name="EventListForRegistration" component={EventListForRegistration} />
       <MainStack.Screen name="AdminEventList" component={AdminEventList} />
       <MainStack.Screen name="AdminEventPanel" component={AdminEventPanel} />
+      <MainStack.Screen name="EmployerEventList" component={EmployerEventList} />
+      <MainStack.Screen name="EmployerEventPanel" component={EmployerEventPanel} />
     </MainStack.Navigator>
   );
 };

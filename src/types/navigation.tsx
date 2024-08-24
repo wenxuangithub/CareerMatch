@@ -19,6 +19,9 @@ export type MainStackParamList = {
 	EventCreation : undefined;
 	AdminEventList: undefined;
   	AdminEventPanel: { eventId: string };
+	EmployerEventList: undefined;
+	EventListForRegistration : undefined;
+	EmployerEventPanel: {eventId: string, companyId: string};
 };
 
 
