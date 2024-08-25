@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { Text, View, StyleSheet, Alert, TouchableOpacity } from "react-native";
 import {
   CameraView,
@@ -16,25 +16,24 @@ import {
   Button,
 } from "react-native-rapi-ui";
 import { Ionicons } from "@expo/vector-icons";
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect, useIsFocused } from "@react-navigation/native";
 
-export default function ({
-  route,
+export default function QRScanner({
   navigation,
 }: NativeStackScreenProps<MainStackParamList, "QRScanner">) {
   const [permission, requestPermission] = useCameraPermissions();
   const [isCameraActive, setIsCameraActive] = useState(false);
   const { decryptData } = useQRCodeEncryption();
   const { isDarkmode } = useTheme();
+  const isFocused = useIsFocused();
 
-  useFocusEffect(
-    useCallback(() => {
+  useEffect(() => {
+    if (isFocused && permission?.granted) {
       setIsCameraActive(true);
-      return () => {
-        setIsCameraActive(false);
-      };
-    }, [])
-  );
+    } else {
+      setIsCameraActive(false);
+    }
+  }, [isFocused, permission]);
 
   const handleBarCodeScanned = async ({ data }: BarcodeScanningResult) => {
     setIsCameraActive(false);
@@ -47,12 +46,20 @@ export default function ({
         case "viewDigitalCard":
           navigation.navigate("DigitalCard", { userId: taskData });
           break;
+        case "viewCompanyInfo":
+          navigation.navigate("EventCompanyInfo", { 
+            eventId: taskData.eventId, 
+            companyId: taskData.companyId 
+          });
+          break;
         default:
           Alert.alert("Invalid QR Code", "This QR code is not recognized.");
+          if (isFocused) setIsCameraActive(true); // Re-activate camera if the QR code was invalid and still focused
       }
     } catch (error) {
       console.error("Error processing QR code:", error);
       Alert.alert("Error", "Failed to process the QR code. Please try again.");
+      if (isFocused) setIsCameraActive(true); // Re-activate camera if there was an error and still focused
     }
   };
 
@@ -85,7 +92,7 @@ export default function ({
         leftAction={() => navigation.goBack()}
       />
       <View style={styles.container}>
-        {isCameraActive ? (
+        {isCameraActive && isFocused ? (
           <>
             <CameraView
               style={StyleSheet.absoluteFillObject}

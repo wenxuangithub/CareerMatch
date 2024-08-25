@@ -61,16 +61,6 @@ export default function ({
                 marginTop: 10,
               }}
             />
-
-            <Button
-              text="QRScanner"
-              onPress={() => {
-                navigation.navigate("QRScanner");
-              }}
-              style={{
-                marginTop: 10,
-              }}
-            />
             <Button
               status="danger"
               text="Logout"

@@ -96,6 +96,7 @@ export default function EmployerEventPanel({
   const [editingJob, setEditingJob] = useState<Job | null>(null);
   const [editingJobIndex, setEditingJobIndex] = useState<number | null>(null);
   const [showEditJobModal, setShowEditJobModal] = useState(false);
+  const [embedLink, setEmbedLink] = useState("");
 
   const auth = getAuth();
   const db = getFirestore();
@@ -166,11 +167,11 @@ export default function EmployerEventPanel({
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const file = result.assets[0];
         setSelectedFile(result);
-        setFileName(file.name);
+        setFileName(file.name || `${type}_${Date.now()}`);
         setNewDocument({
           ...newDocument,
           type: type,
-          name: file.name,
+          name: file.name || `${type}_${Date.now()}`,
         });
       }
     } catch (error) {
@@ -197,18 +198,20 @@ export default function EmployerEventPanel({
 
     setIsSubmitting(true);
     try {
-      if (!eventData || !selectedFile) return;
+      if (!eventData) return;
 
       let content = "";
       if (newDocument.type === "pdf" || newDocument.type === "image") {
-        if (selectedFile.assets && selectedFile.assets.length > 0) {
+        if (selectedFile && selectedFile.assets && selectedFile.assets.length > 0) {
           content = await uploadFile(
             selectedFile.assets[0].uri,
             newDocument.type
           );
+        } else {
+          throw new Error("No file selected");
         }
-      } else {
-        content = newDocument.content; // For embed links, use the content directly
+      } else if (newDocument.type === "embed link") {
+        content = embedLink;
       }
 
       if (content) {
@@ -220,6 +223,7 @@ export default function EmployerEventPanel({
         setNewDocument({ name: "", type: "pdf", content: "" });
         setSelectedFile(null);
         setFileName("");
+        setEmbedLink("");
         setShowDocumentModal(false);
       }
     } catch (error) {
@@ -458,7 +462,7 @@ export default function EmployerEventPanel({
         </View>
       )}
 
-      <Modal
+<Modal
         visible={showDocumentModal}
         animationType="slide"
         transparent={true}
@@ -489,14 +493,20 @@ export default function EmployerEventPanel({
               <Text style={styles.selectedFileName}>Selected: {fileName}</Text>
             )}
             {newDocument.type === "embed link" && (
-              <TextInput
-                placeholder="Embed Link"
-                value={newDocument.content}
-                onChangeText={(text) =>
-                  setNewDocument({ ...newDocument, content: text })
-                }
-                style={styles.input}
-              />
+              <>
+                <TextInput
+                  placeholder="Document Name"
+                  value={fileName}
+                  onChangeText={setFileName}
+                  style={styles.input}
+                />
+                <TextInput
+                  placeholder="Embed Link URL"
+                  value={embedLink}
+                  onChangeText={setEmbedLink}
+                  style={styles.input}
+                />
+              </>
             )}
             {(selectedFile || newDocument.type === "embed link") && (
               <Button
@@ -514,6 +524,7 @@ export default function EmployerEventPanel({
                 setSelectedFile(null);
                 setNewDocument({ name: "", type: "pdf", content: "" });
                 setFileName("");
+                setEmbedLink("");
               }}
               style={styles.modalButton}
             />

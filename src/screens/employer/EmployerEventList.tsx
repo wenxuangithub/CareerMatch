@@ -72,7 +72,7 @@ export default function EmployerEventList({
   const renderEventItem = ({ item }: { item: AcceptedEvent }) => (
     <TouchableOpacity
       style={styles.eventItem}
-      onPress={() => navigation.navigate("EmployerEventPanel", { eventId: item.eventId, companyId : item.companyId })}
+      onPress={() => navigation.navigate("EmployerEventPanel", { eventId: item.eventId, companyId : item.companyId, companyName: item.companyName })}
     >
       <Text style={styles.eventName}>{item.eventName}</Text>
       <Text>{item.companyName}</Text>
@@ -137,4 +137,5 @@ const styles = StyleSheet.create({
     marginTop: 50,
     fontSize: 16,
   },
+  
 });
