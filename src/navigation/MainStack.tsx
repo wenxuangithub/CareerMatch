@@ -26,6 +26,9 @@ import EmployerEventPanel from "../screens/employer/EmployerEventPanel";
 import DocumentsQR from "../screens/employer/DocumentsQR";
 import EventCompanyInfo from "../EventCompanyInfo";
 import JobDetails from "../JobDetails";
+import EventList from "../screens/student/EventList";
+import EventInfo from "../screens/student/EventInfo";
+import BrowseJobList from "../screens/student/BrowseJobList";
 
 const MainStack = createNativeStackNavigator();
 
@@ -95,6 +98,9 @@ const Main = () => {
       <MainStack.Screen name="DocumentsQR" component={DocumentsQR} />
       <MainStack.Screen name="EventCompanyInfo" component={EventCompanyInfo} />
       <MainStack.Screen name="JobDetails" component={JobDetails} />
+      <MainStack.Screen name="EventList" component={EventList} />
+      <MainStack.Screen name="EventInfo" component={EventInfo} />
+      <MainStack.Screen name="BrowseJobList" component={BrowseJobList} />
     </MainStack.Navigator>
   );
 };

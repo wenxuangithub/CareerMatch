@@ -498,7 +498,7 @@ const styles = StyleSheet.create({
   selectedCompany: {
     marginTop: 15,
     padding: 10,
-    backgroundColor: "#f0f0f0",
+    backgroundColor: "#888",
     borderRadius: 5,
   },
   selectedCompanyText: {
@@ -512,7 +512,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   modalContent: {
-    backgroundColor: "white",
+    backgroundColor: "#888",
     padding: 20,
     borderRadius: 10,
     width: "80%",

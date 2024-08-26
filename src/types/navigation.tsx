@@ -49,6 +49,9 @@ export type MainStackParamList = {
     };
     companyName: string;
   };
+  EventList: undefined;
+  EventInfo: {eventId : string;};
+  BrowseJobList: {eventId: string};
 };
 
 export type AuthStackParamList = {

@@ -83,7 +83,6 @@ export default function EventCreation({
         organizer,
         coverPhotoUrl,
         createdAt: new Date().toISOString(),
-        status: 'upcoming',
         createdBy :  auth.currentUser?.uid,
       });
 

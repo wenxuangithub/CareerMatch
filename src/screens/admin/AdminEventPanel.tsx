@@ -406,7 +406,7 @@ export default function AdminEventPanel({
 const styles = StyleSheet.create({
   eventDetails: {
     padding: 16,
-    backgroundColor: "#f0f0f0",
+    backgroundColor: "#888",
     marginBottom: 16,
   },
   eventName: {

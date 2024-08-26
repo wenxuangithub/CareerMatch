@@ -62,6 +62,15 @@ export default function ({
               }}
             />
             <Button
+              text="EventList"
+              onPress={() => {
+                navigation.navigate("EventList");
+              }}
+              style={{
+                marginTop: 10,
+              }}
+            />
+            <Button
               status="danger"
               text="Logout"
               onPress={() => {
