@@ -151,7 +151,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   eventItem: {
-    backgroundColor: "#f0f0f0",
+    backgroundColor: "#888",
     borderRadius: 10,
     marginBottom: 15,
     overflow: 'hidden',

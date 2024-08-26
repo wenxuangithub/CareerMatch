@@ -8,6 +8,10 @@ import {
   Alert,
   ActivityIndicator,
   Dimensions,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+  VirtualizedList,
 } from "react-native";
 import {
   Layout,
@@ -25,20 +29,17 @@ import {
   getDoc,
   setDoc,
   updateDoc,
-  deleteField,
+  arrayUnion,
+  arrayRemove,
 } from "firebase/firestore";
-import {
-  getStorage,
-  ref,
-  uploadBytes,
-  getDownloadURL,
-  deleteObject,
-} from "firebase/storage";
 import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { MainStackParamList } from "../../types/navigation";
 import { getAuth } from "firebase/auth";
+import { deleteObject, getDownloadURL, getStorage, ref, uploadBytes } from "firebase/storage";
+
+
 
 type Document = {
   name: string;
@@ -52,6 +53,7 @@ type Job = {
   classification: string;
   descriptions: string;
   time: string;
+  tags: string[];
 };
 
 type EventData = {
@@ -85,7 +87,9 @@ export default function EmployerEventPanel({
     classification: "",
     descriptions: "",
     time: "",
+    tags: [],
   });
+  const [tagsInput, setTagsInput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedFile, setSelectedFile] =
     useState<DocumentPicker.DocumentResult | null>(null);
@@ -105,6 +109,14 @@ export default function EmployerEventPanel({
   useEffect(() => {
     fetchEventData();
   }, []);
+
+  useEffect(() => {
+    if (showEditJobModal && editingJob) {
+      setTagsInput(editingJob.tags.join(", "));
+    } else {
+      setTagsInput("");
+    }
+  }, [showEditJobModal, editingJob]);
 
   const fetchEventData = async () => {
     try {
@@ -147,6 +159,7 @@ export default function EmployerEventPanel({
       setIsLoading(false);
     }
   };
+  
 
   const handleFilePicker = async (type: "pdf" | "image") => {
     try {
@@ -272,21 +285,63 @@ export default function EmployerEventPanel({
     try {
       if (!eventData) return;
 
-      const updatedJobs = [...eventData.jobs, newJob];
+      const jobToAdd = { ...newJob, tags: tagsInput.split(',').map(tag => tag.trim()) };
+      const updatedJobs = [...eventData.jobs, jobToAdd];
       await updateEventData({ ...eventData, jobs: updatedJobs });
+
+      // Update the "events" document
+      const eventRef = doc(db, "events", eventId);
+      await updateDoc(eventRef, {
+        jobs: arrayUnion({
+          companyName: eventData.companyName,
+          tags: jobToAdd.tags,
+          role: jobToAdd.role,
+        }),
+      });
+
       setNewJob({
         role: "",
         location: "",
         classification: "",
         descriptions: "",
         time: "",
+        tags: [],
       });
+      setTagsInput("");
       setShowJobModal(false);
     } catch (error) {
       console.error("Error adding job:", error);
       Alert.alert("Error", "Failed to add job");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteJob = async (index: number) => {
+    try {
+      if (!eventData) return;
+      const jobToDelete = eventData.jobs[index];
+      const updatedJobs = [...eventData.jobs];
+      updatedJobs.splice(index, 1);
+      await updateEventData({ ...eventData, jobs: updatedJobs });
+
+      // Update the "events" document
+      const eventRef = doc(db, "events", eventId);
+      await updateDoc(eventRef, {
+        jobs: arrayRemove({
+          companyName: eventData.companyName,
+          tags: jobToDelete.tags,
+          role: jobToDelete.role,
+        }),
+      });
+
+      setEventData(prevData => ({
+        ...prevData!,
+        jobs: updatedJobs
+      }));
+    } catch (error) {
+      console.error("Error deleting job:", error);
+      Alert.alert("Error", "Failed to delete job. Please try again.");
     }
   };
 
@@ -389,47 +444,24 @@ export default function EmployerEventPanel({
     }
   };
 
-  const handleDeleteJob = async (index: number) => {
-    try {
-      if (!eventData) return;
-      const updatedJobs = [...eventData.jobs];
-      updatedJobs.splice(index, 1);
-      await updateEventData({ ...eventData, jobs: updatedJobs });
-      setEventData(prevData => ({
-        ...prevData!,
-        jobs: updatedJobs
-      }));
-    } catch (error) {
-      console.error("Error deleting job:", error);
-      Alert.alert("Error", "Failed to delete job. Please try again.");
-    }
-  };
-  return (
-    <Layout>
-      <TopNav
-        middleContent="Event Panel"
-        leftContent={
-          <Ionicons
-            name="chevron-back"
-            size={20}
-            color={isDarkmode ? themeColor.white100 : themeColor.dark}
-          />
-        }
-        leftAction={() => navigation.goBack()}
-      />
-      {isLoading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={themeColor.primary} />
-        </View>
-      ) : (
-        <View style={styles.container}>
+  const renderItem = ({ item, index }) => {
+    switch (item.type) {
+      case 'eventDetails':
+        return (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Event Details</Text>
             <Text>Event: {eventData?.eventName}</Text>
             <Text>Location: {eventData?.location}</Text>
             <Text>Company: {eventData?.companyName}</Text>
+            <Button
+              text="QR Code"
+              onPress={() => navigation.navigate("DocumentsQR", {eventId, companyId, companyName: eventData?.companyName})}
+              style={styles.addButton}
+            />
           </View>
-
+        );
+      case 'documents':
+        return (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Documents</Text>
             <Button
@@ -444,7 +476,9 @@ export default function EmployerEventPanel({
               ListEmptyComponent={<Text>No documents added yet</Text>}
             />
           </View>
-
+        );
+      case 'jobs':
+        return (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Jobs</Text>
             <Button
@@ -459,248 +493,316 @@ export default function EmployerEventPanel({
               ListEmptyComponent={<Text>No jobs added yet</Text>}
             />
           </View>
-        </View>
+        );
+      default:
+        return null;
+    }
+  };
+
+  const getItem = (data, index) => ({
+    id: String(index),
+    type: data[index],
+  });
+
+  const getItemCount = (data) => data.length;
+
+  
+  return (
+    <Layout>
+      <TopNav
+        middleContent="Event Panel"
+        leftContent={
+          <Ionicons
+            name="chevron-back"
+            size={20}
+            color={isDarkmode ? themeColor.white100 : themeColor.dark}
+          />
+        }
+        leftAction={() => navigation.goBack()}
+      />
+     
+        {isLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={themeColor.primary} />
+          </View>
+        ) : (
+          <VirtualizedList
+          data={['eventDetails', 'documents', 'jobs']}
+          initialNumToRender={3}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id}
+          getItemCount={getItemCount}
+          getItem={getItem}
+          contentContainerStyle={styles.container}
+        />
       )}
 
-<Modal
+
+      {/* Job Add/Edit Modal */}
+      <Modal visible={showJobModal || showEditJobModal} animationType="slide" transparent={true}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={styles.modalContainer}
+        >
+          <View style={styles.modalWrapper}>
+            <ScrollView contentContainerStyle={styles.modalContent}>
+              <Text style={styles.modalTitle}>{showEditJobModal ? "Edit Job" : "Add Job"}</Text>
+              
+              <Text style={styles.inputTitle}>Role</Text>
+              <TextInput
+                placeholder="e.g., Software Engineer"
+                value={showEditJobModal ? editingJob?.role : newJob.role}
+                onChangeText={(text) => showEditJobModal ? 
+                  setEditingJob(prev => prev ? {...prev, role: text} : null) : 
+                  setNewJob({ ...newJob, role: text })}
+                style={styles.input}
+              />
+
+              <Text style={styles.inputTitle}>Location</Text>
+              <TextInput
+                placeholder="e.g., New York, NY"
+                value={showEditJobModal ? editingJob?.location : newJob.location}
+                onChangeText={(text) => showEditJobModal ?
+                  setEditingJob(prev => prev ? {...prev, location: text} : null) :
+                  setNewJob({ ...newJob, location: text })}
+                style={styles.input}
+              />
+
+              <Text style={styles.inputTitle}>Classification</Text>
+              <TextInput
+                placeholder="e.g., Full-time, Part-time, Contract"
+                value={showEditJobModal ? editingJob?.classification : newJob.classification}
+                onChangeText={(text) => showEditJobModal ?
+                  setEditingJob(prev => prev ? {...prev, classification: text} : null) :
+                  setNewJob({ ...newJob, classification: text })}
+                style={styles.input}
+              />
+
+              <Text style={styles.inputTitle}>Description</Text>
+              <TextInput
+                placeholder="Enter job description..."
+                value={showEditJobModal ? editingJob?.descriptions : newJob.descriptions}
+                onChangeText={(text) => showEditJobModal ?
+                  setEditingJob(prev => prev ? {...prev, descriptions: text} : null) :
+                  setNewJob({ ...newJob, descriptions: text })}
+                style={[styles.input, styles.textArea]}
+                multiline
+                numberOfLines={4}
+              />
+
+              <Text style={styles.inputTitle}>Time</Text>
+              <TextInput
+                placeholder="e.g., 9:00 AM - 5:00 PM"
+                value={showEditJobModal ? editingJob?.time : newJob.time}
+                onChangeText={(text) => showEditJobModal ?
+                  setEditingJob(prev => prev ? {...prev, time: text} : null) :
+                  setNewJob({ ...newJob, time: text })}
+                style={styles.input}
+              />
+
+              <Text style={styles.inputTitle}>Tags</Text>
+              <TextInput
+                placeholder="e.g., JavaScript, React, Node.js"
+                value={tagsInput}
+                onChangeText={setTagsInput}
+                style={styles.input}
+              />
+
+              <Button
+                text={isSubmitting ? "Saving..." : (showEditJobModal ? "Save Changes" : "Add Job")}
+                onPress={showEditJobModal ? saveEditedJob : handleAddJob}
+                style={styles.modalButton}
+                disabled={isSubmitting}
+              />
+              <Button
+                text="Cancel"
+                status="danger"
+                onPress={() => {
+                  showEditJobModal ? setShowEditJobModal(false) : setShowJobModal(false);
+                  setEditingJob(null);
+                  setNewJob({
+                    role: "",
+                    location: "",
+                    classification: "",
+                    descriptions: "",
+                    time: "",
+                    tags: [],
+                  });
+                  setTagsInput("");
+                }}
+                style={styles.modalButton}
+              />
+            </ScrollView>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* Document Modal */}
+      <Modal
         visible={showDocumentModal}
         animationType="slide"
         transparent={true}
       >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Add Document</Text>
-            <View style={styles.buttonContainer}>
-              <Button
-                text="PDF"
-                onPress={() => handleFilePicker("pdf")}
-                style={styles.fileButton}
-              />
-              <Button
-                text="Image"
-                onPress={() => handleFilePicker("image")}
-                style={styles.fileButton}
-              />
-              <Button
-                text="Link"
-                onPress={() =>
-                  setNewDocument({ ...newDocument, type: "embed link" })
-                }
-                style={styles.fileButton}
-              />
-            </View>
-            {selectedFile && (
-              <Text style={styles.selectedFileName}>Selected: {fileName}</Text>
-            )}
-            {newDocument.type === "embed link" && (
-              <>
-                <TextInput
-                  placeholder="Document Name"
-                  value={fileName}
-                  onChangeText={setFileName}
-                  style={styles.input}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={styles.modalContainer}
+        >
+          <View style={styles.modalWrapper}>
+            <ScrollView contentContainerStyle={styles.modalContent}>
+              <Text style={styles.modalTitle}>Add Document</Text>
+              <View style={styles.buttonContainer}>
+                <Button
+                  text="PDF"
+                  onPress={() => handleFilePicker("pdf")}
+                  style={styles.fileButton}
                 />
-                <TextInput
-                  placeholder="Embed Link URL"
-                  value={embedLink}
-                  onChangeText={setEmbedLink}
-                  style={styles.input}
+                <Button
+                  text="Image"
+                  onPress={() => handleFilePicker("image")}
+                  style={styles.fileButton}
                 />
-              </>
-            )}
-            {(selectedFile || newDocument.type === "embed link") && (
+                <Button
+                  text="Link"
+                  onPress={() =>
+                    setNewDocument({ ...newDocument, type: "embed link" })
+                  }
+                  style={styles.fileButton}
+                />
+              </View>
+              {selectedFile && (
+                <Text style={styles.selectedFileName}>Selected: {fileName}</Text>
+              )}
+              {newDocument.type === "embed link" && (
+                <>
+                  <Text style={styles.inputTitle}>Document Name</Text>
+                  <TextInput
+                    placeholder="Enter document name"
+                    value={fileName}
+                    onChangeText={setFileName}
+                    style={styles.input}
+                  />
+                  <Text style={styles.inputTitle}>Embed Link URL</Text>
+                  <TextInput
+                    placeholder="Enter embed link URL"
+                    value={embedLink}
+                    onChangeText={setEmbedLink}
+                    style={styles.input}
+                  />
+                </>
+              )}
+              {(selectedFile || newDocument.type === "embed link") && (
+                <Button
+                  text={isSubmitting ? "Uploading..." : "Add Document"}
+                  onPress={handleAddDocument}
+                  disabled={isSubmitting}
+                  style={styles.modalButton}
+                />
+              )}
               <Button
-                text={isSubmitting ? "Uploading..." : "Add Document"}
-                onPress={handleAddDocument}
-                disabled={isSubmitting}
+                text="Cancel"
+                status="danger"
+                onPress={() => {
+                  setShowDocumentModal(false);
+                  setSelectedFile(null);
+                  setNewDocument({ name: "", type: "pdf", content: "" });
+                  setFileName("");
+                  setEmbedLink("");
+                }}
                 style={styles.modalButton}
               />
-            )}
-            <Button
-              text="Cancel"
-              status="danger"
-              onPress={() => {
-                setShowDocumentModal(false);
-                setSelectedFile(null);
-                setNewDocument({ name: "", type: "pdf", content: "" });
-                setFileName("");
-                setEmbedLink("");
-              }}
-              style={styles.modalButton}
-            />
+            </ScrollView>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
-      <Modal
-        visible={showEditJobModal}
-        animationType="slide"
-        transparent={true}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Edit Job</Text>
-            <TextInput
-              placeholder="Role"
-              value={editingJob?.role}
-              onChangeText={(text) =>
-                setEditingJob((prev) => (prev ? { ...prev, role: text } : null))
-              }
-              style={styles.input}
-            />
-            <TextInput
-              placeholder="Location"
-              value={editingJob?.location}
-              onChangeText={(text) =>
-                setEditingJob((prev) =>
-                  prev ? { ...prev, location: text } : null
-                )
-              }
-              style={styles.input}
-            />
-            <TextInput
-              placeholder="Classification"
-              value={editingJob?.classification}
-              onChangeText={(text) =>
-                setEditingJob((prev) =>
-                  prev ? { ...prev, classification: text } : null
-                )
-              }
-              style={styles.input}
-            />
-            <TextInput
-              placeholder="Description"
-              value={editingJob?.descriptions}
-              onChangeText={(text) =>
-                setEditingJob((prev) =>
-                  prev ? { ...prev, descriptions: text } : null
-                )
-              }
-              style={styles.input}
-              multiline
-            />
-            <TextInput
-              placeholder="Time"
-              value={editingJob?.time}
-              onChangeText={(text) =>
-                setEditingJob((prev) => (prev ? { ...prev, time: text } : null))
-              }
-              style={styles.input}
-            />
-            <Button
-              text="Save Changes"
-              onPress={saveEditedJob}
-              style={styles.modalButton}
-            />
-            <Button
-              text="Cancel"
-              status="danger"
-              onPress={() => {
-                setShowEditJobModal(false);
-                setEditingJob(null);
-              }}
-              style={styles.modalButton}
-            />
-          </View>
-        </View>
-      </Modal>
-
+      {/* Rename Document Modal */}
       <Modal
         visible={showRenameDocumentModal}
         animationType="slide"
         transparent={true}
       >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Rename Document</Text>
-            <TextInput
-              placeholder="New Document Name"
-              value={newDocumentName}
-              onChangeText={setNewDocumentName}
-              style={styles.input}
-            />
-            <Button
-              text="Save"
-              onPress={saveRenamedDocument}
-              style={styles.modalButton}
-            />
-            <Button
-              text="Cancel"
-              status="danger"
-              onPress={() => {
-                setShowRenameDocumentModal(false);
-                setEditingDocument(null);
-                setNewDocumentName("");
-              }}
-              style={styles.modalButton}
-            />
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={styles.modalContainer}
+        >
+          <View style={styles.modalWrapper}>
+            <ScrollView contentContainerStyle={styles.modalContent}>
+              <Text style={styles.modalTitle}>Rename Document</Text>
+              <Text style={styles.inputTitle}>New Document Name</Text>
+              <TextInput
+                placeholder="Enter new document name"
+                value={newDocumentName}
+                onChangeText={setNewDocumentName}
+                style={styles.input}
+              />
+              <Button
+                text="Save"
+                onPress={saveRenamedDocument}
+                style={styles.modalButton}
+              />
+              <Button
+                text="Cancel"
+                status="danger"
+                onPress={() => {
+                  setShowRenameDocumentModal(false);
+                  setEditingDocument(null);
+                  setNewDocumentName("");
+                }}
+                style={styles.modalButton}
+              />
+            </ScrollView>
           </View>
-        </View>
-      </Modal>
-
-      <Modal visible={showEditJobModal} animationType="slide" transparent={true}>
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Edit Job</Text>
-            <TextInput
-              placeholder="Role"
-              value={editingJob?.role}
-              onChangeText={(text) => setEditingJob(prev => prev ? {...prev, role: text} : null)}
-              style={styles.input}
-            />
-            <TextInput
-              placeholder="Location"
-              value={editingJob?.location}
-              onChangeText={(text) => setEditingJob(prev => prev ? {...prev, location: text} : null)}
-              style={styles.input}
-            />
-            <TextInput
-              placeholder="Classification"
-              value={editingJob?.classification}
-              onChangeText={(text) => setEditingJob(prev => prev ? {...prev, classification: text} : null)}
-              style={styles.input}
-            />
-            <TextInput
-              placeholder="Description"
-              value={editingJob?.descriptions}
-              onChangeText={(text) => setEditingJob(prev => prev ? {...prev, descriptions: text} : null)}
-              style={styles.input}
-              multiline
-            />
-            <TextInput
-              placeholder="Time"
-              value={editingJob?.time}
-              onChangeText={(text) => setEditingJob(prev => prev ? {...prev, time: text} : null)}
-              style={styles.input}
-            />
-            <Button
-              text="Save Changes"
-              onPress={saveEditedJob}
-              style={styles.modalButton}
-            />
-            <Button
-              text="Cancel"
-              status="danger"
-              onPress={() => {
-                setShowEditJobModal(false);
-                setEditingJob(null);
-                setEditingJobIndex(null);
-              }}
-              style={styles.modalButton}
-            />
-          </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </Layout>
   );
 }
 
 const styles = StyleSheet.create({
+  scrollViewContent: {
+    flexGrow: 1,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+  },
+  modalWrapper: {
+    width: width * 0.9,
+    maxHeight: height * 0.8,
+    backgroundColor: "#333",
+    borderRadius: 8,
+  },
+  modalContent: {
+    padding: 20,
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#fff",
+    marginBottom: 20,
+    textAlign: "center",
+  },
+  inputTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#fff",
+    marginBottom: 5,
+  },
   input: {
     marginBottom: 15,
     backgroundColor: "#f0f0f0",
     borderRadius: 5,
     padding: 10,
+    color: "#000",
+  },
+  textArea: {
+    height: 100,
+    textAlignVertical: 'top',
+  },
+  modalButton: {
+    marginTop: 12,
   },
   container: {
     flex: 1,
@@ -722,6 +824,19 @@ const styles = StyleSheet.create({
   addButton: {
     marginTop: 10,
     marginBottom: 10,
+  },
+  buttonContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 16,
+  },
+  fileButton: {
+    flex: 1,
+    marginHorizontal: 4,
+  },
+  selectedFileName: {
+    color: "#fff",
+    marginBottom: 12,
   },
   linkItem: {
     flexDirection: "row",
@@ -760,41 +875,6 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     padding: 5,
-  },
-  modalContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.7)",
-  },
-  modalContent: {
-    backgroundColor: "#333",
-    padding: 20,
-    borderRadius: 8,
-    width: width * 0.9,
-    maxHeight: height * 0.8,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 16,
-    color: "#fff",
-  },
-  buttonContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 16,
-  },
-  fileButton: {
-    flex: 1,
-    marginHorizontal: 4,
-  },
-  selectedFileName: {
-    color: "#fff",
-    marginBottom: 12,
-  },
-  modalButton: {
-    marginTop: 12,
   },
   progressBar: {
     height: 10,

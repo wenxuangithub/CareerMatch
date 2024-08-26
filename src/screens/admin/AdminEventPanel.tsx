@@ -47,8 +47,9 @@ type Application = {
   userId: string;
   status: "pending" | "approved" | "rejected";
   createdAt: string;
-  companyName?: string; // We'll populate this after fetching
-  applicantName?: string; // We'll populate this after fetching
+  companyName?: string;
+  applicantName?: string; 
+  position?: string;
 };
 
 export default function AdminEventPanel({
@@ -117,10 +118,12 @@ export default function AdminEventPanel({
         }
 
         // Fetch user details
-        const userRef = doc(db, "users", appData.userId);
+        const userRef = doc(db, "user", appData.userId);
         const userSnap = await getDoc(userRef);
         if (userSnap.exists()) {
           appData.applicantName = userSnap.data().displayName;
+          appData.position = userSnap.data().designation;
+          
         }
 
         applicationList.push(appData);

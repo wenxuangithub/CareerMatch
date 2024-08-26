@@ -82,7 +82,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   eventItem: {
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#888',
     padding: 16,
     marginBottom: 8,
     borderRadius: 8,
