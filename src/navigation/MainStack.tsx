@@ -29,6 +29,7 @@ import JobDetails from "../JobDetails";
 import EventList from "../screens/student/EventList";
 import EventInfo from "../screens/student/EventInfo";
 import BrowseJobList from "../screens/student/BrowseJobList";
+import AIJobRecommendation from "../screens/student/AIJobRecommendations";
 
 const MainStack = createNativeStackNavigator();
 
@@ -101,6 +102,7 @@ const Main = () => {
       <MainStack.Screen name="EventList" component={EventList} />
       <MainStack.Screen name="EventInfo" component={EventInfo} />
       <MainStack.Screen name="BrowseJobList" component={BrowseJobList} />
+      <MainStack.Screen name="AIJobRecommendation" component={AIJobRecommendation} />
     </MainStack.Navigator>
   );
 };

@@ -52,6 +52,9 @@ export type MainStackParamList = {
   EventList: undefined;
   EventInfo: {eventId : string;};
   BrowseJobList: {eventId: string};
+  AIJobRecommendation: {
+    jobs: Job[];
+  };
 };
 
 export type AuthStackParamList = {

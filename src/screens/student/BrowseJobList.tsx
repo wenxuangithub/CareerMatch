@@ -10,6 +10,10 @@ type Job = {
   companyName: string;
   role: string;
   tags: string[];
+  classification: string;
+  descriptions: string;
+  location: string;
+  time: string;
 };
 
 type EventDetails = {
@@ -56,6 +60,12 @@ export default function BrowseJobList({ route, navigation }: NativeStackScreenPr
     </View>
   );
 
+  const handleAIRecommendation = () => {
+    if (eventDetails) {
+      navigation.navigate("AIJobRecommendation", { jobs: eventDetails.jobs });
+    }
+  };
+
   return (
     <Layout>
       <TopNav
@@ -68,6 +78,14 @@ export default function BrowseJobList({ route, navigation }: NativeStackScreenPr
           />
         }
         leftAction={() => navigation.goBack()}
+        rightContent={
+          <Ionicons
+            name="bulb-outline"
+            size={20}
+            color={isDarkmode ? themeColor.white100 : themeColor.dark}
+          />
+        }
+        rightAction={handleAIRecommendation}
       />
       <View style={styles.container}>
         {loading ? (
