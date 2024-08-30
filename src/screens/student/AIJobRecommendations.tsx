@@ -9,12 +9,13 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore, doc, getDoc } from 'firebase/firestore';
 
 type Job = {
-  classification: string;
-  descriptions: string;
-  location: string;
+  companyName: string;
   role: string;
   tags: string[];
-  time: string;
+  classification?: string;
+  descriptions?: string;
+  location?: string;
+  time?: string;
 };
 
 export default function AIJobRecommendation({ route, navigation }: NativeStackScreenProps<MainStackParamList, "AIJobRecommendation">) {
@@ -101,16 +102,17 @@ export default function AIJobRecommendation({ route, navigation }: NativeStackSc
         {error && (
           <Text style={styles.errorText}>Error: {error}</Text>
         )}
-        {recommendation && (
+        {recommendation.length > 0 && (
           <View style={styles.recommendationContainer}>
             <Text style={styles.recommendationTitle}>Recommended Jobs:</Text>
             {recommendation.map((job, index) => (
               <View key={index} style={styles.jobItem}>
                 <Text style={styles.jobRole}>{job.role}</Text>
-                <Text style={styles.jobDescription}>{job.descriptions}</Text>
-                <Text style={styles.jobLocation}>Location: {job.location}</Text>
+                <Text style={styles.companyName}>{job.companyName}</Text>
+                {job.descriptions && <Text style={styles.jobDescription}>{job.descriptions}</Text>}
+                {job.location && <Text style={styles.jobLocation}>Location: {job.location}</Text>}
                 <View style={styles.tagsContainer}>
-                  {job.tags.map((tag, tagIndex) => (
+                  {job.tags && job.tags.map((tag, tagIndex) => (
                     <Text key={tagIndex} style={styles.tag}>{tag}</Text>
                   ))}
                 </View>
@@ -191,5 +193,10 @@ const styles = StyleSheet.create({
     marginRight: 5,
     marginBottom: 5,
     fontSize: 12,
+  },
+  companyName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 5,
   },
 });

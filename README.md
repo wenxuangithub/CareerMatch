@@ -2,3 +2,7 @@
 
 Enter this
 $Env:REACT_NATIVE_PACKAGER_HOSTNAME="Your IP address"
+
+
+To start virtual server
+venv\Scripts\activate
