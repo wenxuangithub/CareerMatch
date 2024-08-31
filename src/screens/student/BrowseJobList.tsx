@@ -7,13 +7,16 @@ import { MainStackParamList } from "../../types/navigation";
 import { getFirestore, doc, getDoc } from 'firebase/firestore';
 
 type Job = {
-  companyName: string;
-  role: string;
-  tags: string[];
   classification: string;
   descriptions: string;
   location: string;
+  companyName: string;
+  role: string;
+  tags: string[];
   time: string;
+  matchReason: string;
+  matchScore: string;
+  detailedAnalysis: string;
 };
 
 type EventDetails = {
@@ -52,6 +55,7 @@ export default function BrowseJobList({ route, navigation }: NativeStackScreenPr
     <View style={styles.jobItem}>
       <Text style={styles.companyName}>{item.companyName}</Text>
       <Text style={styles.jobRole}>{item.role}</Text>
+      <Text>{item.classification}</Text>
       <View style={styles.tagsContainer}>
         {item.tags.map((tag, index) => (
           <Text key={index} style={styles.tag}>{tag}</Text>
@@ -62,7 +66,7 @@ export default function BrowseJobList({ route, navigation }: NativeStackScreenPr
 
   const handleAIRecommendation = () => {
     if (eventDetails) {
-      navigation.navigate("AIJobRecommendation", { jobs: eventDetails.jobs });
+      navigation.navigate("AIJobRecommendation", { jobs: eventDetails.jobs, eventId: eventId });
     }
   };
 

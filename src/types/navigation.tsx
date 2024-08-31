@@ -1,3 +1,5 @@
+import { StringFormat } from "firebase/storage";
+
 export type MainStackParamList = {
   MainTabs: undefined;
   EditStudentProfile: undefined;
@@ -54,6 +56,7 @@ export type MainStackParamList = {
   BrowseJobList: {eventId: string};
   AIJobRecommendation: {
     jobs: Job[];
+    eventId: string;
   };
 };
 

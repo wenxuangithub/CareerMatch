@@ -31,13 +31,13 @@ def extract_text_from_pdf(pdf_url):
         logger.error(f"Error extracting text from PDF: {str(e)}")
         return f"Error extracting PDF text: {str(e)}"
 
+
 def get_job_recommendations(pdf_url, jobs):
     try:
         resume_text = extract_text_from_pdf(pdf_url)
         
         prompt = f"""
-        Given the following resume and job listings, recommend the top 3 most suitable jobs for the candidate. 
-        Analyze the resume and compare it with the job listings to find the best matches.
+        Given the following resume and job listings, analyze all job listings and provide a suitability assessment for each job.
         
         Resume:
         {resume_text}
@@ -45,15 +45,19 @@ def get_job_recommendations(pdf_url, jobs):
         Job Listings:
         {json.dumps(jobs, indent=2)}
 
-        Provide your recommendations as a JSON array of job objects. Each job object should include the following fields: 
-        companyName, role, descriptions, location, tags, and a field called 'matchReason' explaining why this job is a good match for the candidate.
+        For each job, provide an assessment as a JSON object with the following fields:
+        - companyName: The name of the company
+        - role: The job title
+        - tags: An array of relevant skills or keywords
+        - matchReason: A detailed explanation of why this job is or isn't a good match for the candidate
+        - matchScore: A string representing the match quality: "Excellent" (for top matches), "Average" (for decent matches), or "Poor" (for less suitable matches)
+        - detailedAnalysis: A more in-depth analysis of the candidate's fit for the role, including strengths and potential areas for improvement
 
-        Return only the JSON array, without any additional text or explanation.
+        Return a JSON array containing an assessment for each job listing, without any additional text or explanation.
         """
 
         logger.debug(f"Generated prompt: {prompt}")
 
-        # Call Gemini API
         model = genai.GenerativeModel('gemini-1.5-flash')
         response = model.generate_content(
             prompt,
@@ -61,7 +65,7 @@ def get_job_recommendations(pdf_url, jobs):
                 "temperature": 0.2,
                 "top_p": 1,
                 "top_k": 1,
-                "max_output_tokens": 2048,
+                "max_output_tokens": 8192,  # Increased to handle more job listings
             },
             safety_settings={
                 HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
@@ -71,7 +75,6 @@ def get_job_recommendations(pdf_url, jobs):
             },
         )
 
-        # Parse the JSON response
         recommendations = json.loads(response.text)
         logger.debug(f"Gemini API response: {recommendations}")
 
