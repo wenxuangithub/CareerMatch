@@ -30,6 +30,10 @@ import EventList from "../screens/student/EventList";
 import EventInfo from "../screens/student/EventInfo";
 import BrowseJobList from "../screens/student/BrowseJobList";
 import AIJobRecommendation from "../screens/student/AIJobRecommendations";
+import EventEdit from "../screens/admin/EventEdit";
+import ApplicationDetails from "../screens/admin/ApplicationDetails";
+import AttendanceFeature from "../screens/admin/AttendanceFeature";
+
 
 const MainStack = createNativeStackNavigator();
 
@@ -103,6 +107,11 @@ const Main = () => {
       <MainStack.Screen name="EventInfo" component={EventInfo} />
       <MainStack.Screen name="BrowseJobList" component={BrowseJobList} />
       <MainStack.Screen name="AIJobRecommendation" component={AIJobRecommendation} />
+      <MainStack.Screen name="ApplicationDetails" component={ApplicationDetails} />
+      <MainStack.Screen name="EventEdit" component={EventEdit} />
+      <MainStack.Screen name="AttendanceFeature" component={AttendanceFeature} />
+    
+    
     </MainStack.Navigator>
   );
 };

@@ -58,6 +58,26 @@ export type MainStackParamList = {
     jobs: Job[];
     eventId: string;
   };
+  ApplicationDetails: {
+    applicationId: string;
+  };
+  EventEdit : {
+    eventId : string;
+  }
+  AttendanceFeature: {
+    eventId: string;
+  };
+  FormContentView: {
+    questionnaireId: string;
+  };
+  EventFormBuilder: {
+    eventId: string;
+  };
+  EventFormTemplate: {
+    eventId: string;
+  };
+};
+
 };
 
 export type AuthStackParamList = {

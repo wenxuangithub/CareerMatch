@@ -73,14 +73,7 @@ export default function ({
     <Layout>
       <TopNav
         middleContent="Notifications"
-        leftContent={
-          <Ionicons
-            name="chevron-back"
-            size={20}
-            color={isDarkmode ? themeColor.white100 : themeColor.dark}
-          />
-        }
-        leftAction={() => navigation.goBack()}
+
       />
       <FlatList
         data={notifications}
