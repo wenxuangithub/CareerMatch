@@ -31,6 +31,7 @@
     "react-dom": "18.2.0",
     "react-native": "0.74.5",
     "react-native-dotenv": "^3.4.11",
+    "react-native-dropdown-picker": "^5.4.6",
     "react-native-modal": "^13.0.1",
     "react-native-paper": "^5.12.5",
     "react-native-qrcode-svg": "^6.3.2",

@@ -67,18 +67,38 @@ export type MainStackParamList = {
   AttendanceFeature: {
     eventId: string;
   };
-  FormContentView: {
-    questionnaireId: string;
-  };
   EventFormBuilder: {
     eventId: string;
   };
   EventFormTemplate: {
     eventId: string;
   };
+  FormContentView: {
+    questionnaire: {
+      name: string;
+      questions: Array<{
+        id: string;
+        type: 'text' | 'multipleChoice' | 'yesNo';
+        question: string;
+        options?: string[];
+      }>;
+    };
+  };
+  EventQRCode: {
+    eventId: string;
+  };
+  EventForm: {
+    eventId: string;
+    questionnaireId: string;
+  };
+  QRRecorded: {
+    message: string;
+    success: boolean;
+  };
 };
 
-};
+
+
 
 export type AuthStackParamList = {
   Login: undefined;

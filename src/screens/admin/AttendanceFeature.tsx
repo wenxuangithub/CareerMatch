@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, Alert, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, ScrollView, Alert, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Layout, TopNav, Text, Button, useTheme, themeColor } from "react-native-rapi-ui";
 import { Ionicons } from "@expo/vector-icons";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { MainStackParamList } from "../../types/navigation";
-import { getFirestore, doc, getDoc } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore';
+import { useFocusEffect } from '@react-navigation/native';
 
 type Questionnaire = {
   id: string;
-  name: string;
-  // Add other relevant fields
+  questionnaire: {
+    name: string;
+    questions: any[]; // You might want to define a more specific type for questions
+  };
 };
 
 export default function AttendanceFeature({
@@ -23,9 +26,11 @@ export default function AttendanceFeature({
 
   const db = getFirestore();
 
-  useEffect(() => {
-    fetchSelectedQuestionnaire();
-  }, []);
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchSelectedQuestionnaire();
+    }, [])
+  );
 
   const fetchSelectedQuestionnaire = async () => {
     setIsLoading(true);
@@ -34,15 +39,17 @@ export default function AttendanceFeature({
       const eventSnap = await getDoc(eventRef);
       if (eventSnap.exists()) {
         const eventData = eventSnap.data();
-        if (eventData.selectedQuestionnaireId) {
-          const questionnaireRef = doc(db, "questionnaires", eventData.selectedQuestionnaireId);
+        if (eventData.questionnaireId) {
+          const questionnaireRef = doc(db, "questionnaires", eventData.questionnaireId);
           const questionnaireSnap = await getDoc(questionnaireRef);
           if (questionnaireSnap.exists()) {
             setSelectedQuestionnaire({
               id: questionnaireSnap.id,
-              ...questionnaireSnap.data()
+              questionnaire: questionnaireSnap.data().questionnaire
             } as Questionnaire);
           }
+        } else {
+          setSelectedQuestionnaire(null);
         }
       }
     } catch (error) {
@@ -52,6 +59,30 @@ export default function AttendanceFeature({
       setIsLoading(false);
     }
   };
+
+  const handleUnselectQuestionnaire = async () => {
+    try {
+      const eventRef = doc(db, "events", eventId);
+      await updateDoc(eventRef, {
+        questionnaireId: null
+      });
+      setSelectedQuestionnaire(null);
+      Alert.alert("Success", "Questionnaire unselected successfully");
+    } catch (error) {
+      console.error("Error unselecting questionnaire:", error);
+      Alert.alert("Error", "Failed to unselect questionnaire");
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <Layout>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={themeColor.primary} />
+        </View>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -70,18 +101,25 @@ export default function AttendanceFeature({
         {/* First Section: Selected Questionnaire */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Selected Questionnaire</Text>
-          {selectedQuestionnaire ? (
-            <TouchableOpacity
-              style={styles.questionnaireItem}
-              onPress={() => navigation.navigate("FormContentView", { questionnaireId: selectedQuestionnaire.id })}
-            >
-              <Text>{selectedQuestionnaire.name}</Text>
-            </TouchableOpacity>
+          {selectedQuestionnaire && selectedQuestionnaire.questionnaire ? (
+            <View>
+              <TouchableOpacity
+                style={styles.questionnaireItem}
+                onPress={() => navigation.navigate("FormContentView", { questionnaire: selectedQuestionnaire.questionnaire })}
+              >
+                <Text>{selectedQuestionnaire.questionnaire.name}</Text>
+              </TouchableOpacity>
+              <Button
+                text="Unselect Questionnaire"
+                status="danger"
+                onPress={handleUnselectQuestionnaire}
+                style={styles.unselectButton}
+              />
+            </View>
           ) : (
             <Text>No questionnaire selected</Text>
           )}
         </View>
-
         {/* Second Section: Questionnaire Management */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Questionnaire Management</Text>
@@ -104,7 +142,7 @@ export default function AttendanceFeature({
           <Text style={styles.sectionTitle}>QR Code</Text>
           <Button
             text="Generate QR Code"
-            onPress={() => Alert.alert("Coming Soon", "QR Code generation will be available in a future update.")}
+            onPress={() =>  navigation.navigate("EventQRCode", { eventId })}
             style={styles.button}
           />
         </View>
@@ -137,6 +175,7 @@ const styles = StyleSheet.create({
     padding: 10,
     backgroundColor: '#f0f0f0',
     borderRadius: 5,
+    marginBottom: 10,
   },
   buttonContainer: {
     flexDirection: 'row',
@@ -146,7 +185,15 @@ const styles = StyleSheet.create({
     flex: 1,
     marginHorizontal: 5,
   },
+  unselectButton: {
+    marginTop: 10,
+  },
   exportButton: {
     marginTop: 20,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

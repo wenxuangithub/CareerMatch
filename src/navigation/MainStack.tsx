@@ -33,6 +33,12 @@ import AIJobRecommendation from "../screens/student/AIJobRecommendations";
 import EventEdit from "../screens/admin/EventEdit";
 import ApplicationDetails from "../screens/admin/ApplicationDetails";
 import AttendanceFeature from "../screens/admin/AttendanceFeature";
+import EventFormBuilder from "../screens/admin/EventFormBuilder";
+import EventFormTemplate from "../screens/admin/EventFormTemplate";
+import FormContentView from "../screens/admin/FormContentView";
+import EventQRCode from "../screens/admin/EventQRCode";
+import EventForm from "../EventForm";
+import QRRecorded from "../QRRecorded";
 
 
 const MainStack = createNativeStackNavigator();
@@ -110,11 +116,17 @@ const Main = () => {
       <MainStack.Screen name="ApplicationDetails" component={ApplicationDetails} />
       <MainStack.Screen name="EventEdit" component={EventEdit} />
       <MainStack.Screen name="AttendanceFeature" component={AttendanceFeature} />
-    
-    
+      <MainStack.Screen name="EventFormBuilder" component={EventFormBuilder} />
+      <MainStack.Screen name="EventFormTemplate" component={EventFormTemplate} />
+      <MainStack.Screen name="FormContentView" component={FormContentView} />
+      <MainStack.Screen name="EventQRCode" component={EventQRCode} />
+      <MainStack.Screen name="EventForm" component={EventForm} />
+      <MainStack.Screen name="QRRecorded" component={QRRecorded} />
+
     </MainStack.Navigator>
   );
 };
 
 //<MainStack.Screen name="" component={} />
+
 export default Main;

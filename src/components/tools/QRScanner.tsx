@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Text, View, StyleSheet, Alert, TouchableOpacity } from "react-native";
 import {
   CameraView,
@@ -17,6 +17,8 @@ import {
 } from "react-native-rapi-ui";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useIsFocused } from "@react-navigation/native";
+import { getFirestore, collection, query, where, getDocs, addDoc } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
 
 export default function QRScanner({
   navigation,
@@ -26,6 +28,8 @@ export default function QRScanner({
   const { decryptData } = useQRCodeEncryption();
   const { isDarkmode } = useTheme();
   const isFocused = useIsFocused();
+  const db = getFirestore();
+  const auth = getAuth();
 
   useEffect(() => {
     if (isFocused && permission?.granted) {
@@ -35,6 +39,29 @@ export default function QRScanner({
     }
   }, [isFocused, permission]);
 
+  const recordScan = async (scanData: any) => {
+    try {
+      const qrDataRef = collection(db, "QRData");
+      await addDoc(qrDataRef, {
+        ...scanData,
+        userId: auth.currentUser?.uid || 'anonymous',
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.error("Error recording scan:", error);
+    }
+  };
+
+  const checkAttendanceRecord = async (eventId: string, userId: string) => {
+    const qrDataRef = collection(db, "QRData");
+    const q = query(qrDataRef, 
+      where("eventId", "==", eventId),
+      where("userId", "==", userId),
+    );
+    const querySnapshot = await getDocs(q);
+    return !querySnapshot.empty;
+  };
+
   const handleBarCodeScanned = async ({ data }: BarcodeScanningResult) => {
     setIsCameraActive(false);
 
@@ -42,24 +69,81 @@ export default function QRScanner({
       const decryptedData = await decryptData(data);
       const { task, data: taskData } = JSON.parse(decryptedData);
 
+      const userId = auth.currentUser?.uid;
+      if (!userId) {
+        throw new Error("User not authenticated");
+      }
+
       switch (task) {
+        case "attendance":
+          const hasAttended = await checkAttendanceRecord(taskData.eventId, userId);
+          
+          if (hasAttended) {
+            navigation.navigate("QRRecorded", { 
+              message: "You have already recorded your attendance for this event.",
+              success: false
+            });
+          } else if (taskData.questionnaireId) {
+            navigation.navigate("EventForm", { 
+              eventId: taskData.eventId, 
+              questionnaireId: taskData.questionnaireId 
+            });
+          } else {
+
+            const qrDataRef = collection(db, "QRData");
+            await addDoc(qrDataRef, {
+              eventId: taskData.eventId,
+              userId,
+              task: "attendance",
+              timestamp: new Date().toISOString(),
+            });
+
+            navigation.navigate("QRRecorded", { 
+              message: "Attendance recorded successfully!",
+              success: true
+            });
+          }
+          break;
+
         case "viewDigitalCard":
+          await recordScan({
+            task,
+            targetUserId: taskData,
+            scanType: 'view_digital_card',
+          });
           navigation.navigate("DigitalCard", { userId: taskData });
           break;
+
         case "viewCompanyInfo":
+          await recordScan({
+            task,
+            eventId: taskData.eventId,
+            companyId: taskData.companyId,
+            scanType: 'view_company_info',
+          });
           navigation.navigate("EventCompanyInfo", { 
             eventId: taskData.eventId, 
             companyId: taskData.companyId 
           });
           break;
+
         default:
+          await recordScan({
+            task,
+            scanType: 'unknown',
+            result: 'invalid_qr_code',
+          });
           Alert.alert("Invalid QR Code", "This QR code is not recognized.");
-          if (isFocused) setIsCameraActive(true); // Re-activate camera if the QR code was invalid and still focused
+          if (isFocused) setIsCameraActive(true);
       }
     } catch (error) {
       console.error("Error processing QR code:", error);
+      await recordScan({
+        scanType: 'error',
+        errorMessage: error,
+      });
       Alert.alert("Error", "Failed to process the QR code. Please try again.");
-      if (isFocused) setIsCameraActive(true); // Re-activate camera if there was an error and still focused
+      if (isFocused) setIsCameraActive(true);
     }
   };
 
