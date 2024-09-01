@@ -50,6 +50,8 @@ export type MainStackParamList = {
       time: string;
     };
     companyName: string;
+    eventId: string;
+    companyId: string;
   };
   EventList: undefined;
   EventInfo: {eventId : string;};
@@ -94,6 +96,13 @@ export type MainStackParamList = {
   QRRecorded: {
     message: string;
     success: boolean;
+  };
+  AttendanceToCSV: {
+    eventId: string;
+  }
+  EmployerEventAnalytic: {
+    eventId: string;
+    companyId: string;
   };
 };
 

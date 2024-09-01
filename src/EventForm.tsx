@@ -1,12 +1,34 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, StyleSheet, Alert, FlatList, ListRenderItemInfo, TouchableOpacity, Modal } from 'react-native';
-import { Layout, TopNav, Text, Button, TextInput, useTheme, themeColor } from "react-native-rapi-ui";
+import React, { useState, useEffect, useCallback } from "react";
+import {
+  View,
+  StyleSheet,
+  Alert,
+  FlatList,
+  ListRenderItemInfo,
+  TouchableOpacity,
+  Modal,
+} from "react-native";
+import {
+  Layout,
+  TopNav,
+  Text,
+  Button,
+  TextInput,
+  useTheme,
+  themeColor,
+} from "react-native-rapi-ui";
 import { Ionicons } from "@expo/vector-icons";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { MainStackParamList } from "../../types/navigation";
-import { getFirestore, doc, getDoc, collection, addDoc } from 'firebase/firestore';
-import { getAuth } from 'firebase/auth';
-import { RadioButton } from 'react-native-paper';
+import { MainStackParamList } from "./types/navigation";
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  collection,
+  addDoc,
+} from "firebase/firestore";
+import { getAuth } from "firebase/auth";
+import { RadioButton } from "react-native-paper";
 
 type Question = {
   id: string;
@@ -25,7 +47,7 @@ const CustomDropdown = ({ options, value, onSelect }) => {
         style={styles.dropdownButton}
         onPress={() => setModalVisible(true)}
       >
-        <Text>{value || 'Select an option'}</Text>
+        <Text>{value || "Select an option"}</Text>
       </TouchableOpacity>
       <Modal
         animationType="slide"
@@ -34,7 +56,9 @@ const CustomDropdown = ({ options, value, onSelect }) => {
         onRequestClose={() => setModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, isDarkmode && styles.modalContentDark]}>
+          <View
+            style={[styles.modalContent, isDarkmode && styles.modalContentDark]}
+          >
             {options.map((option) => (
               <TouchableOpacity
                 key={option}
@@ -44,7 +68,14 @@ const CustomDropdown = ({ options, value, onSelect }) => {
                   setModalVisible(false);
                 }}
               >
-                <Text style={[styles.optionText, isDarkmode && styles.optionTextDark]}>{option}</Text>
+                <Text
+                  style={[
+                    styles.optionText,
+                    isDarkmode && styles.optionTextDark,
+                  ]}
+                >
+                  {option}
+                </Text>
               </TouchableOpacity>
             ))}
             <Button
@@ -66,7 +97,7 @@ export default function EventForm({
   const { isDarkmode } = useTheme();
   const { eventId, questionnaireId } = route.params;
   const [questions, setQuestions] = useState<Question[]>([]);
-  const [answers, setAnswers] = useState<{[key: string]: string}>({});
+  const [answers, setAnswers] = useState<{ [key: string]: string }>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const db = getFirestore();
@@ -78,7 +109,8 @@ export default function EventForm({
         const questionnaireRef = doc(db, "questionnaires", questionnaireId);
         const questionnaireSnap = await getDoc(questionnaireRef);
         if (questionnaireSnap.exists()) {
-          const fetchedQuestions = questionnaireSnap.data().questionnaire.questions;
+          const fetchedQuestions =
+            questionnaireSnap.data().questionnaire.questions;
           setQuestions(fetchedQuestions);
         }
       } catch (error) {
@@ -93,7 +125,7 @@ export default function EventForm({
   }, [questionnaireId]);
 
   const handleAnswerChange = (questionId: string, answer: string) => {
-    setAnswers(prev => ({ ...prev, [questionId]: answer }));
+    setAnswers((prev) => ({ ...prev, [questionId]: answer }));
   };
 
   const handleSubmit = async () => {
@@ -101,7 +133,7 @@ export default function EventForm({
       Alert.alert("Error", "You must be logged in to submit the form");
       return;
     }
-  
+
     setIsSubmitting(true);
     try {
       const qrDataRef = collection(db, "QRData");
@@ -110,11 +142,13 @@ export default function EventForm({
         userId: auth.currentUser.uid,
         answers,
         timestamp: new Date().toISOString(),
+        task: "attendance",
       });
-  
-      navigation.navigate("QRRecorded", { 
-        message: "Attendance and questionnaire responses recorded successfully!",
-        success: true
+
+      navigation.navigate("QRRecorded", {
+        message:
+          "Attendance and questionnaire responses recorded successfully!",
+        success: true,
       });
     } catch (error) {
       console.error("Error submitting form:", error);
@@ -124,45 +158,54 @@ export default function EventForm({
     }
   };
 
-  const renderQuestion = useCallback(({ item }: ListRenderItemInfo<Question>) => {
-    return (
-      <View style={styles.questionContainer}>
-        <Text style={styles.questionText}>{item.question}</Text>
-        {item.type === "text" && (
-          <TextInput
-            placeholder="Enter your answer"
-            value={answers[item.id] || ""}
-            onChangeText={(text) => handleAnswerChange(item.id, text)}
-            style={styles.textInput}
-          />
-        )}
-        {item.type === "multipleChoice" && (
-          <CustomDropdown
-            options={item.options || []}
-            value={answers[item.id]}
-            onSelect={(option) => handleAnswerChange(item.id, option)}
-          />
-        )}
-        {item.type === "yesNo" && (
-          <RadioButton.Group 
-            onValueChange={(value) => handleAnswerChange(item.id, value)} 
-            value={answers[item.id] || ''}
-          >
-            <View style={styles.radioButtonContainer}>
-              <TouchableOpacity style={styles.radioButton} onPress={() => handleAnswerChange(item.id, 'Yes')}>
-                <RadioButton value="Yes" />
-                <Text>Yes</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.radioButton} onPress={() => handleAnswerChange(item.id, 'No')}>
-                <RadioButton value="No" />
-                <Text>No</Text>
-              </TouchableOpacity>
-            </View>
-          </RadioButton.Group>
-        )}
-      </View>
-    );
-  }, [answers]);
+  const renderQuestion = useCallback(
+    ({ item }: ListRenderItemInfo<Question>) => {
+      return (
+        <View style={styles.questionContainer}>
+          <Text style={styles.questionText}>{item.question}</Text>
+          {item.type === "text" && (
+            <TextInput
+              placeholder="Enter your answer"
+              value={answers[item.id] || ""}
+              onChangeText={(text) => handleAnswerChange(item.id, text)}
+              style={styles.textInput}
+            />
+          )}
+          {item.type === "multipleChoice" && (
+            <CustomDropdown
+              options={item.options || []}
+              value={answers[item.id]}
+              onSelect={(option) => handleAnswerChange(item.id, option)}
+            />
+          )}
+          {item.type === "yesNo" && (
+            <RadioButton.Group
+              onValueChange={(value) => handleAnswerChange(item.id, value)}
+              value={answers[item.id] || ""}
+            >
+              <View style={styles.radioButtonContainer}>
+                <TouchableOpacity
+                  style={styles.radioButton}
+                  onPress={() => handleAnswerChange(item.id, "Yes")}
+                >
+                  <RadioButton value="Yes" />
+                  <Text>Yes</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.radioButton}
+                  onPress={() => handleAnswerChange(item.id, "No")}
+                >
+                  <RadioButton value="No" />
+                  <Text>No</Text>
+                </TouchableOpacity>
+              </View>
+            </RadioButton.Group>
+          )}
+        </View>
+      );
+    },
+    [answers]
+  );
 
   if (isLoading) {
     return (
@@ -208,8 +251,8 @@ export default function EventForm({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   listContainer: {
     padding: 20,
@@ -220,22 +263,22 @@ const styles = StyleSheet.create({
   },
   questionText: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 10,
   },
   textInput: {
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: "#ccc",
     borderRadius: 5,
     padding: 10,
   },
   radioButtonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+    flexDirection: "row",
+    justifyContent: "space-around",
   },
   radioButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     padding: 10,
   },
   submitButton: {
@@ -243,36 +286,36 @@ const styles = StyleSheet.create({
   },
   dropdownButton: {
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: "#ccc",
     borderRadius: 5,
     padding: 10,
     marginBottom: 15,
   },
   modalOverlay: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   modalContent: {
-    backgroundColor: 'white',
+    backgroundColor: "white",
     padding: 20,
     borderRadius: 10,
-    width: '80%',
+    width: "80%",
   },
   modalContentDark: {
-    backgroundColor: '#333',
+    backgroundColor: "#333",
   },
   optionItem: {
     padding: 15,
     borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
+    borderBottomColor: "#ccc",
   },
   optionText: {
     fontSize: 16,
   },
   optionTextDark: {
-    color: 'white',
+    color: "white",
   },
   cancelButton: {
     marginTop: 10,

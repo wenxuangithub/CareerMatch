@@ -458,6 +458,11 @@ export default function EmployerEventPanel({
               onPress={() => navigation.navigate("DocumentsQR", {eventId, companyId, companyName: eventData?.companyName})}
               style={styles.addButton}
             />
+                        <Button
+              text="Analytics"
+              onPress={() => navigation.navigate("EmployerEventAnalytic", {eventId, companyId})}
+              style={styles.addButton}
+            />
           </View>
         );
       case 'documents':
@@ -507,35 +512,68 @@ export default function EmployerEventPanel({
   const getItemCount = (data) => data.length;
 
   
-  return (
-    <Layout>
-      <TopNav
-        middleContent="Event Panel"
-        leftContent={
-          <Ionicons
-            name="chevron-back"
-            size={20}
-            color={isDarkmode ? themeColor.white100 : themeColor.dark}
-          />
-        }
-        leftAction={() => navigation.goBack()}
-      />
-     
-        {isLoading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={themeColor.primary} />
-          </View>
-        ) : (
-          <VirtualizedList
-          data={['eventDetails', 'documents', 'jobs']}
-          initialNumToRender={3}
-          renderItem={renderItem}
-          keyExtractor={(item) => item.id}
-          getItemCount={getItemCount}
-          getItem={getItem}
-          contentContainerStyle={styles.container}
+    return (
+      <Layout>
+        <TopNav
+          middleContent="Event Panel"
+          leftContent={
+            <Ionicons
+              name="chevron-back"
+              size={20}
+              color={isDarkmode ? themeColor.white100 : themeColor.dark}
+            />
+          }
+          leftAction={() => navigation.goBack()}
         />
-      )}
+        <ScrollView contentContainerStyle={styles.scrollViewContent}>
+          {isLoading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={themeColor.primary} />
+            </View>
+          ) : (
+            <View style={styles.container}>
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Event Details</Text>
+                <Text>Event: {eventData?.eventName}</Text>
+                <Text>Location: {eventData?.location}</Text>
+                <Text>Company: {eventData?.companyName}</Text>
+                <Button
+                  text="QR Code"
+                  onPress={() => navigation.navigate("DocumentsQR", {eventId, companyId, companyName: eventData?.companyName})}
+                  style={styles.addButton}
+                />
+                <Button
+                  text="Analytics"
+                  onPress={() => navigation.navigate("EmployerEventAnalytic", {eventId, companyId})}
+                  style={styles.addButton}
+                />
+              </View>
+  
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Documents</Text>
+                <Button
+                  text="Add Document"
+                  onPress={() => setShowDocumentModal(true)}
+                  style={styles.addButton}
+                />
+                {eventData?.documents.map((doc, index) => renderDocumentItem({ item: doc, index }))}
+                {eventData?.documents.length === 0 && <Text>No documents added yet</Text>}
+              </View>
+  
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Jobs</Text>
+                <Button
+                  text="Add Job"
+                  onPress={() => setShowJobModal(true)}
+                  style={styles.addButton}
+                />
+                {eventData?.jobs.map((job, index) => renderJobItem({ item: job, index }))}
+                {eventData?.jobs.length === 0 && <Text>No jobs added yet</Text>}
+              </View>
+            </View>
+          )}
+        </ScrollView>
+  
 
 
       {/* Job Add/Edit Modal */}

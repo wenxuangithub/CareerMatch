@@ -1,15 +1,108 @@
-import React from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState } from 'react';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { Layout, Text, TopNav, useTheme, themeColor, Button } from "react-native-rapi-ui";
 import { Ionicons } from "@expo/vector-icons";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { MainStackParamList } from "./types/navigation";
+import { getAuth } from 'firebase/auth';
+import { getFirestore, doc, getDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
 
 type JobDetailsProps = NativeStackScreenProps<MainStackParamList, "JobDetails">;
 
 export default function JobDetails({ route, navigation }: JobDetailsProps) {
   const { isDarkmode } = useTheme();
-  const { job, companyName } = route.params;
+  const { job, companyName, eventId, companyId } = route.params;
+  const [isApplying, setIsApplying] = useState(false);
+
+  const auth = getAuth();
+  const db = getFirestore();
+
+  const handleApply = async () => {
+    if (!auth.currentUser) {
+      Alert.alert("Error", "You must be logged in to apply for jobs.");
+      return;
+    }
+
+    // Check if eventId and companyId are defined
+    if (!eventId || !companyId) {
+      Alert.alert("Error", "Missing event or company information. Please try again later.");
+      Alert.alert(companyId);
+      return;
+    }
+
+    setIsApplying(true);
+
+    try {
+      // Check if user has a resume
+      const userDoc = await getDoc(doc(db, "user", auth.currentUser.uid));
+      const userData = userDoc.data();
+
+      if (!userData || !userData.pdfURL) {
+        Alert.alert(
+          "Resume Required",
+          "You need to upload a resume before applying for jobs. Please update your profile with a resume.",
+          [
+            { text: "OK", onPress: () => navigation.navigate("StudentProfile") }
+          ]
+        );
+        return;
+      }
+
+      // Prepare the application data
+      const applicationData = {
+        userId: auth.currentUser.uid,
+        eventId: eventId,
+        companyId: companyId,
+        role: job.role || "Unspecified Role",
+        date: serverTimestamp(),
+      };
+
+      // Add application to JobApplication collection
+      const docRef = await addDoc(collection(db, "JobApplication"), applicationData);
+
+      console.log("Application submitted with ID: ", docRef.id);
+      Alert.alert("Success", "Your application has been submitted successfully!");
+    } catch (error) {
+      console.error("Error applying for job:", error);
+      Alert.alert("Error", "Failed to submit your application. Please try again.");
+    } finally {
+      setIsApplying(false);
+    }
+  };
+
+  // Render job details only if job object is defined
+  const renderJobDetails = () => {
+    if (!job) {
+      return <Text>Job details are not available.</Text>;
+    }
+
+    return (
+      <>
+        <View style={styles.header}>
+          <Text style={styles.jobTitle}>{job.role || "Unspecified Role"}</Text>
+          <Text style={styles.companyName}>{companyName || "Unspecified Company"}</Text>
+          <Text style={styles.jobLocation}>{job.location || "Location not specified"}</Text>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Job Details</Text>
+          <View style={styles.detailItem}>
+            <Ionicons name="business-outline" size={20} color={themeColor.primary} />
+            <Text style={styles.detailText}>{job.classification || "Classification not specified"}</Text>
+          </View>
+          <View style={styles.detailItem}>
+            <Ionicons name="time-outline" size={20} color={themeColor.primary} />
+            <Text style={styles.detailText}>{job.time || "Time not specified"}</Text>
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Job Description</Text>
+          <Text style={styles.description}>{job.descriptions || "No description available"}</Text>
+        </View>
+      </>
+    );
+  };
 
   return (
     <Layout>
@@ -25,36 +118,12 @@ export default function JobDetails({ route, navigation }: JobDetailsProps) {
         leftAction={() => navigation.goBack()}
       />
       <ScrollView style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.jobTitle}>{job.role}</Text>
-          <Text style={styles.companyName}>{companyName}</Text>
-          <Text style={styles.jobLocation}>{job.location}</Text>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Job Details</Text>
-          <View style={styles.detailItem}>
-            <Ionicons name="business-outline" size={20} color={themeColor.primary} />
-            <Text style={styles.detailText}>{job.classification}</Text>
-          </View>
-          <View style={styles.detailItem}>
-            <Ionicons name="time-outline" size={20} color={themeColor.primary} />
-            <Text style={styles.detailText}>{job.time}</Text>
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Job Description</Text>
-          <Text style={styles.description}>{job.descriptions}</Text>
-        </View>
-
+        {renderJobDetails()}
         <Button
-          text="Apply Now"
-          onPress={() => {
-            // Implement application logic here
-            console.log("Apply for job:", job.role);
-          }}
+          text={isApplying ? "Applying..." : "Apply Now"}
+          onPress={handleApply}
           style={styles.applyButton}
+          disabled={isApplying || !job}
         />
       </ScrollView>
     </Layout>
@@ -106,5 +175,6 @@ const styles = StyleSheet.create({
   },
   applyButton: {
     marginTop: 20,
+    marginBottom: 30, // Add some bottom margin for better scrolling
   },
 });

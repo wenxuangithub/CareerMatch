@@ -147,10 +147,9 @@ export default function AttendanceFeature({
           />
         </View>
 
-        {/* Export Data Button */}
         <Button
           text="Export Data to CSV"
-          onPress={() => Alert.alert("Coming Soon", "Data export feature will be available in a future update.")}
+          onPress={() => navigation.navigate("AttendanceToCSV", { eventId })}
           style={styles.exportButton}
         />
       </ScrollView>

@@ -64,7 +64,12 @@ export default function EventCompanyInfo({
   };
 
   const openJobDetails = (job: EventData['jobs'][0]) => {
-    navigation.navigate("JobDetails", { job, companyName: eventData?.companyName });
+    navigation.navigate("JobDetails", { 
+      job, 
+      companyName: eventData?.companyName,
+      eventId: eventId,
+      companyId: companyId
+    });
   };
 
   if (isLoading) {
@@ -76,8 +81,6 @@ export default function EventCompanyInfo({
       </Layout>
     );
   }
-
-  
 
   return (
     <Layout>
@@ -99,7 +102,6 @@ export default function EventCompanyInfo({
           <Text>Location: {eventData?.location}</Text>
           <Text>Company: {eventData?.companyName}</Text>
         </View>
-
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Documents</Text>
@@ -181,5 +183,4 @@ const styles = StyleSheet.create({
     marginTop: 5,
     fontStyle: 'italic',
   },
-  
 });
