@@ -1,7 +1,9 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 from recommendations import get_job_recommendations, generate_resume
+from resume_utils import analyze_resume, convert_to_latex, export_to_pdf
 import logging
+import io
 
 app = Flask(__name__)
 CORS(app)
@@ -51,6 +53,68 @@ def create_resume():
         return jsonify({"resume": resume})
     except Exception as e:
         app.logger.error(f"An error occurred during resume generation: {str(e)}")
+        return jsonify({"error": "An unexpected error occurred"}), 500
+
+@app.route('/analyze_resume', methods=['POST'])
+def analyze_resume_route():
+    try:
+        data = request.json
+        app.logger.debug(f"Received data for resume analysis: {data}")
+
+        pdf_url = data.get('resumeUrl')
+        if not pdf_url:
+            return jsonify({"error": "Missing resume URL"}), 400
+
+        analysis = analyze_resume(pdf_url)
+
+        if isinstance(analysis, str) and analysis.startswith("Error"):
+            return jsonify({"error": analysis}), 500
+
+        return jsonify({"analysis": analysis})
+    except Exception as e:
+        app.logger.error(f"An error occurred during resume analysis: {str(e)}")
+        return jsonify({"error": "An unexpected error occurred"}), 500
+
+@app.route('/convert_to_latex', methods=['POST'])
+def convert_to_latex_route():
+    try:
+        data = request.json
+        app.logger.debug(f"Received data for LaTeX conversion: {data}")
+
+        pdf_url = data.get('resumeUrl')
+        if not pdf_url:
+            return jsonify({"error": "Missing resume URL"}), 400
+
+        latex_content = convert_to_latex(pdf_url)
+
+        if isinstance(latex_content, str) and latex_content.startswith("Error"):
+            return jsonify({"error": latex_content}), 500
+
+        return jsonify({"latex": latex_content})
+    except Exception as e:
+        app.logger.error(f"An error occurred during LaTeX conversion: {str(e)}")
+        return jsonify({"error": "An unexpected error occurred"}), 500
+
+@app.route('/export_to_pdf', methods=['POST'])
+def export_to_pdf_route():
+    try:
+        data = request.json
+        app.logger.debug(f"Received data for PDF export: {data}")
+
+        latex_content = data.get('latex')
+        if not latex_content:
+            return jsonify({"error": "Missing LaTeX content"}), 400
+
+        pdf_buffer = export_to_pdf(latex_content)
+
+        return send_file(
+            pdf_buffer,
+            mimetype='application/pdf',
+            as_attachment=True,
+            download_name='resume.pdf'
+        )
+    except Exception as e:
+        app.logger.error(f"An error occurred during PDF export: {str(e)}")
         return jsonify({"error": "An unexpected error occurred"}), 500
 
 if __name__ == '__main__':

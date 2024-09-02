@@ -79,6 +79,24 @@ export default function ({
                 marginTop: 10,
               }}
             />
+                                    <Button
+              text="Resume Analysis"
+              onPress={() => {
+                navigation.navigate("ResumeAnalysis");
+              }}
+              style={{
+                marginTop: 10,
+              }}
+            />
+                                    <Button
+              text="Resume Migration"
+              onPress={() => {
+                navigation.navigate("ResumeMigration");
+              }}
+              style={{
+                marginTop: 10,
+              }}
+            />
             <Button
               status="danger"
               text="Logout"

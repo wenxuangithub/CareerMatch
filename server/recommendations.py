@@ -106,6 +106,7 @@ def generate_resume(user_input):
         5. Skills
 
         Format the resume using Markdown for better readability.
+        Generate some recommendations as well for in writing a good resume.
         """
 
         logger.debug(f"Generated resume prompt: {prompt}")

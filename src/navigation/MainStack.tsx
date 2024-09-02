@@ -43,6 +43,8 @@ import AttendanceToCSV from "../screens/admin/AttendanceToCSV";
 import EmployerEventAnalytic from "../screens/employer/EmployerEventAnalytic";
 import AIResumeBuilder from "../screens/student/AIResumeBuilder";
 import ResumePreview from "../screens/student/ResumePreview";
+import ResumeAnalysis from "../screens/student/ResumeAnalysis";
+import ResumeMigration from "../screens/student/ResumeMigration";
 
 
 const MainStack = createNativeStackNavigator();
@@ -130,6 +132,8 @@ const Main = () => {
       <MainStack.Screen name="EmployerEventAnalytic" component={EmployerEventAnalytic} />
       <MainStack.Screen name="AIResumeBuilder" component={AIResumeBuilder} />
       <MainStack.Screen name="ResumePreview" component={ResumePreview} />
+      <MainStack.Screen name="ResumeAnalysis" component={ResumeAnalysis} />
+      <MainStack.Screen name="ResumeMigration" component={ResumeMigration} />
 
     </MainStack.Navigator>
   );

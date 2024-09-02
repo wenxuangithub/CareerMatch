@@ -59,6 +59,7 @@ export const useGeminiAI = () => {
   const generateResume = async (userInput: UserInput) => {
     setLoading(true);
     setError(null);
+    setGeneratedResume('');
 
     try {
       console.log('Sending request to:', `${API_BASE_URL}/generate_resume`);
@@ -68,8 +69,50 @@ export const useGeminiAI = () => {
 
       console.log('Received response:', JSON.stringify(response.data, null, 2));
       setGeneratedResume(response.data.resume);
+      return response.data.resume;
     } catch (err) {
       handleError(err);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const analyzeResume = async (resumeUrl: string) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      console.log('Sending request to:', `${API_BASE_URL}/analyze_resume`);
+      console.log('Request payload:', { resumeUrl });
+
+      const response = await axios.post(`${API_BASE_URL}/analyze_resume`, { resumeUrl });
+
+      console.log('Received response:', JSON.stringify(response.data, null, 2));
+      return response.data.analysis;
+    } catch (err) {
+      handleError(err);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const convertToLatex = async (resumeUrl: string) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      console.log('Sending request to:', `${API_BASE_URL}/convert_to_latex`);
+      console.log('Request payload:', { resumeUrl });
+
+      const response = await axios.post(`${API_BASE_URL}/convert_to_latex`, { resumeUrl });
+
+      console.log('Received response:', JSON.stringify(response.data, null, 2));
+      return response.data.latex;
+    } catch (err) {
+      handleError(err);
+      return null;
     } finally {
       setLoading(false);
     }
@@ -85,5 +128,15 @@ export const useGeminiAI = () => {
     }
   };
 
-  return { recommendation, generatedResume, loading, error, getRecommendation, generateResume };
+  return { 
+    recommendation, 
+    generatedResume, 
+    loading, 
+    error, 
+    getRecommendation, 
+    generateResume,
+    analyzeResume,
+    convertToLatex,
+    API_BASE_URL 
+  };
 };

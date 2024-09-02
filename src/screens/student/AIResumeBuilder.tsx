@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   ScrollView,
@@ -18,10 +18,13 @@ import {
   Section,
   SectionContent,
 } from "react-native-rapi-ui";
+import { Button as PaperButton } from 'react-native-paper';
 import { Ionicons } from "@expo/vector-icons";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { MainStackParamList } from "../../types/navigation";
 import { useGeminiAI } from '../../hooks/useGeminiAI';
+import { getAuth } from "firebase/auth";
+import { getFirestore, doc, getDoc } from "firebase/firestore";
 
 // Define the industries available for resume tailoring
 const INDUSTRIES = [
@@ -60,6 +63,31 @@ export default function AIResumeBuilder({
     targetIndustry: '',
   });
   const { generatedResume, loading, error, generateResume } = useGeminiAI();
+  const [isResumeGenerated, setIsResumeGenerated] = useState(false);
+  const [generatedResumeContent, setGeneratedResumeContent] = useState('');
+
+  useEffect(() => {
+    fetchUserData();
+  }, []);
+
+  const fetchUserData = async () => {
+    const auth = getAuth();
+    const db = getFirestore();
+
+    if (auth.currentUser) {
+      const userDoc = await getDoc(doc(db, "user", auth.currentUser.uid));
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        setUserInput(prevState => ({
+          ...prevState,
+          fullName: userData.displayName || '',
+          email: userData.email || '',
+          phone: userData.phone || '',
+          education: userData.education || '',
+        }));
+      }
+    }
+  };
 
   // Handle input changes
   const handleInputChange = (key: keyof UserInput, value: string) => {
@@ -75,18 +103,25 @@ export default function AIResumeBuilder({
     }
 
     try {
-      await generateResume(userInput);
+      const generatedResumeContent = await generateResume(userInput);
       
       if (error) {
         Alert.alert('Error', error);
-      } else if (generatedResume) {
-        // Navigate to a new screen to display the generated resume
-        navigation.navigate('ResumePreview', { resume: generatedResume });
+      } else if (generatedResumeContent) {
+        setGeneratedResumeContent(generatedResumeContent);
+        setIsResumeGenerated(true);
+        Alert.alert('Success', 'Resume generated successfully!');
+      } else {
+        Alert.alert('Error', 'Failed to generate resume. Please try again.');
       }
     } catch (err) {
       console.error('Error generating resume:', err);
-      Alert.alert('Error', 'Failed to generate resume. Please try again.');
+      Alert.alert('Error', 'An unexpected error occurred. Please try again.');
     }
+  };
+
+  const handleViewResume = () => {
+    navigation.navigate('ResumePreview', { resume: generatedResumeContent });
   };
 
   return (
@@ -177,20 +212,15 @@ export default function AIResumeBuilder({
               <Text style={styles.sectionTitle}>Target Industry</Text>
               <View style={styles.industryContainer}>
                 {INDUSTRIES.map((industry) => (
-                  <Button
+                  <PaperButton
                     key={industry}
-                    text={industry}
+                    mode={userInput.targetIndustry === industry ? "contained" : "outlined"}
                     onPress={() => handleInputChange('targetIndustry', industry)}
-                    style={[
-                      styles.industryButton,
-                      userInput.targetIndustry === industry && styles.selectedIndustry,
-                    ]}
-                    textStyle={
-                      userInput.targetIndustry === industry
-                        ? styles.selectedIndustryText
-                        : {}
-                    }
-                  />
+                    style={styles.industryButton}
+                    labelStyle={styles.industryButtonLabel}
+                  >
+                    {industry}
+                  </PaperButton>
                 ))}
               </View>
             </SectionContent>
@@ -202,12 +232,17 @@ export default function AIResumeBuilder({
             style={styles.generateButton}
             disabled={loading}
           />
-          <Button
-          text={'View'}
-          onPress = {() =>  navigation.navigate('ResumePreview', { resume: generatedResume } )}/>
+
+          {isResumeGenerated && (
+            <Button
+              text="View Resume"
+              onPress={handleViewResume}
+              style={styles.viewResumeButton}
+            />
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
-      </Layout>
+    </Layout>
   );
 }
 
@@ -236,13 +271,13 @@ const styles = StyleSheet.create({
     width: '48%',
     marginBottom: 10,
   },
-  selectedIndustry: {
-    backgroundColor: themeColor.primary,
-  },
-  selectedIndustryText: {
-    color: themeColor.white,
+  industryButtonLabel: {
+    fontSize: 12,
   },
   generateButton: {
     marginTop: 20,
+  },
+  viewResumeButton: {
+    marginTop: 10,
   },
 });
