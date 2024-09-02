@@ -104,6 +104,10 @@ export type MainStackParamList = {
     eventId: string;
     companyId: string;
   };
+  AIResumeBuider : undefined;
+  ResumePreview : {
+    resume : string;
+  };
 };
 
 

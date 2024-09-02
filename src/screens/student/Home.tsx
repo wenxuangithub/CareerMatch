@@ -70,6 +70,15 @@ export default function ({
                 marginTop: 10,
               }}
             />
+                        <Button
+              text="AI Resume Builder"
+              onPress={() => {
+                navigation.navigate("AIResumeBuilder");
+              }}
+              style={{
+                marginTop: 10,
+              }}
+            />
             <Button
               status="danger"
               text="Logout"

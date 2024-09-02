@@ -82,3 +82,55 @@ def get_job_recommendations(pdf_url, jobs):
     except Exception as e:
         logger.error(f"Error in get_job_recommendations: {str(e)}")
         return f"Error generating recommendations: {str(e)}"
+    
+
+def generate_resume(user_input):
+    try:
+        prompt = f"""
+        Generate a professional resume based on the following information:
+
+        Full Name: {user_input['fullName']}
+        Email: {user_input['email']}
+        Phone: {user_input['phone']}
+        Education: {user_input['education']}
+        Work Experience: {user_input['experience']}
+        Skills: {user_input['skills']}
+        Target Industry: {user_input['targetIndustry']}
+
+        Please create a well-structured resume that highlights the candidate's strengths and is tailored to the {user_input['targetIndustry']} industry. 
+        The resume should include the following sections:
+        1. Contact Information
+        2. Professional Summary
+        3. Work Experience
+        4. Education
+        5. Skills
+
+        Format the resume using Markdown for better readability.
+        """
+
+        logger.debug(f"Generated resume prompt: {prompt}")
+
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        response = model.generate_content(
+            prompt,
+            generation_config={
+                "temperature": 0.7,
+                "top_p": 1,
+                "top_k": 1,
+                "max_output_tokens": 2048,
+            },
+            safety_settings={
+                HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
+                HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
+                HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
+                HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
+            },
+        )
+
+        generated_resume = response.text
+        logger.debug(f"Generated resume: {generated_resume}")
+
+        return generated_resume
+    except Exception as e:
+        logger.error(f"Error in generate_resume: {str(e)}")
+        return f"Error generating resume: {str(e)}"

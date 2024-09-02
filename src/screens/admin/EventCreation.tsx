@@ -84,6 +84,8 @@ export default function EventCreation({
         coverPhotoUrl,
         createdAt: new Date().toISOString(),
         createdBy :  auth.currentUser?.uid,
+        status : 'active',
+        jobs : "",
       });
 
       Alert.alert('Success', 'Event created successfully');

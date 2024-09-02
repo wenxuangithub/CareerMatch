@@ -800,6 +800,27 @@ const styles = StyleSheet.create({
   scrollViewContent: {
     flexGrow: 1,
   },
+  container: {
+    flex: 1,
+    padding: 20,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  section: {
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+  addButton: {
+    marginTop: 10,
+    marginBottom: 10,
+  },
   modalContainer: {
     flex: 1,
     justifyContent: "center",
@@ -841,27 +862,6 @@ const styles = StyleSheet.create({
   },
   modalButton: {
     marginTop: 12,
-  },
-  container: {
-    flex: 1,
-    padding: 20,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  section: {
-    marginBottom: 20,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 10,
-  },
-  addButton: {
-    marginTop: 10,
-    marginBottom: 10,
   },
   buttonContainer: {
     flexDirection: "row",

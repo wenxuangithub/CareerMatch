@@ -41,6 +41,8 @@ import EventForm from "../EventForm";
 import QRRecorded from "../QRRecorded";
 import AttendanceToCSV from "../screens/admin/AttendanceToCSV";
 import EmployerEventAnalytic from "../screens/employer/EmployerEventAnalytic";
+import AIResumeBuilder from "../screens/student/AIResumeBuilder";
+import ResumePreview from "../screens/student/ResumePreview";
 
 
 const MainStack = createNativeStackNavigator();
@@ -126,6 +128,8 @@ const Main = () => {
       <MainStack.Screen name="QRRecorded" component={QRRecorded} />
       <MainStack.Screen name="AttendanceToCSV" component={AttendanceToCSV} />
       <MainStack.Screen name="EmployerEventAnalytic" component={EmployerEventAnalytic} />
+      <MainStack.Screen name="AIResumeBuilder" component={AIResumeBuilder} />
+      <MainStack.Screen name="ResumePreview" component={ResumePreview} />
 
     </MainStack.Navigator>
   );
