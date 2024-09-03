@@ -3,7 +3,9 @@
 Enter this
 $Env:REACT_NATIVE_PACKAGER_HOSTNAME="Your IP address"
 
-Server Side
+
+
+Flask Server Side
 ## Setup Instructions
 
 If you are unable to launch virtualenv please follow these instruction:
