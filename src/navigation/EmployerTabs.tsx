@@ -9,6 +9,7 @@ import Home from "../screens/employer/EmployerHome";
 import Notification from "../Notification";
 import QRScanner from "../components/tools/QRScanner";
 import Profile from "../screens/student/Profile";
+import EmployerProfile from "../screens/employer/EmployerProfile";
 
 const Tabs = createBottomTabNavigator();
 const EmployerTabs = () => {
@@ -49,14 +50,14 @@ const EmployerTabs = () => {
         }}
       />
       <Tabs.Screen
-        name="Notification"
-        component={Notification}
+        name="EmployerProfile"
+        component={EmployerProfile}
         options={{
           tabBarLabel: ({ focused }) => (
             <TabBarText focused={focused} title="" />
           ),
           tabBarIcon: ({ focused }) => (
-            <TabBarIcon focused={focused} icon={"notifications"} />
+            <TabBarIcon focused={focused} icon={"person"} />
           ),
         }}
       />

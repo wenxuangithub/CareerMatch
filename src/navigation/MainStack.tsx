@@ -45,7 +45,11 @@ import AIResumeBuilder from "../screens/student/AIResumeBuilder";
 import ResumePreview from "../screens/student/ResumePreview";
 import ResumeAnalysis from "../screens/student/ResumeAnalysis";
 import ResumeMigration from "../screens/student/ResumeMigration";
-
+import JobApplicationDetails from "../screens/employer/JobApplicationDetails"
+import StudentInterviewStatus from "../screens/student/StudentInterviewStatus";
+import ConversationPage from "../ConversationPage";
+import EmployerProfile from "../screens/employer/EmployerProfile";
+import EditEmployerProfile from "../screens/employer/EditEmployerProfile";
 
 const MainStack = createNativeStackNavigator();
 
@@ -134,6 +138,11 @@ const Main = () => {
       <MainStack.Screen name="ResumePreview" component={ResumePreview} />
       <MainStack.Screen name="ResumeAnalysis" component={ResumeAnalysis} />
       <MainStack.Screen name="ResumeMigration" component={ResumeMigration} />
+      <MainStack.Screen name="JobApplicationDetails" component={JobApplicationDetails}/>
+      <MainStack.Screen name="StudentInterviewStatus" component={StudentInterviewStatus} />
+      <MainStack.Screen name="ConversationPage" component={ConversationPage} />
+      <MainStack.Screen name="EmployerProfile" component={EmployerProfile} />
+      <MainStack.Screen name="EditEmployerProfile" component={EditEmployerProfile} />
 
     </MainStack.Navigator>
   );

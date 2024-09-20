@@ -136,12 +136,6 @@ export default function EventInfo({ route, navigation }: NativeStackScreenProps<
             onPress={() => navigation.navigate('BrowseJobList', { eventId: eventDetails.id })}
             style={styles.browseJobsButton}
           />
-
-          <Button
-            text="Apply to Attend"
-            onPress={handleApplyToAttend}
-            style={styles.applyButton}
-          />
         </View>
       </ScrollView>
     </Layout>

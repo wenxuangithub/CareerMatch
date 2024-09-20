@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   View,
   ScrollView,
@@ -6,7 +6,7 @@ import {
   Alert,
   TouchableOpacity,
   Platform,
-} from 'react-native';
+} from "react-native";
 import {
   Layout,
   Text,
@@ -20,20 +20,23 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { MainStackParamList } from "../../types/navigation";
 import { getAuth } from "firebase/auth";
 import { getFirestore, doc, getDoc } from "firebase/firestore";
-import * as DocumentPicker from 'expo-document-picker';
-import * as FileSystem from 'expo-file-system';
-import * as Sharing from 'expo-sharing';
-import { useGeminiAI } from '../../hooks/useGeminiAI';
-import axios from 'axios';
+import * as DocumentPicker from "expo-document-picker";
+import * as FileSystem from "expo-file-system";
+import * as Sharing from "expo-sharing";
+import { useGeminiAI } from "../../hooks/useGeminiAI";
+import axios from "axios";
 
-const API_BASE_URL = 'http://192.168.0.106:5000'; // Make sure this matches your Flask server address
+const API_BASE_URL = "http://10.10.5.32:5000"; // Make sure this matches your Flask server address
 
 export default function ResumeMigration({
   navigation,
 }: NativeStackScreenProps<MainStackParamList, "ResumeMigration">) {
   const { isDarkmode } = useTheme();
-  const [preUploadedResumeUrl, setPreUploadedResumeUrl] = useState<string | null>(null);
-  const [selectedResume, setSelectedResume] = useState<DocumentPicker.DocumentResult | null>(null);
+  const [preUploadedResumeUrl, setPreUploadedResumeUrl] = useState<
+    string | null
+  >(null);
+  const [selectedResume, setSelectedResume] =
+    useState<DocumentPicker.DocumentResult | null>(null);
   const [latexContent, setLatexContent] = useState<string | null>(null);
   const { loading, error, convertToLatex } = useGeminiAI();
   const [isExporting, setIsExporting] = useState(false);
@@ -57,43 +60,49 @@ export default function ResumeMigration({
 
   const handleUploadResume = async () => {
     try {
-      const result = await DocumentPicker.getDocumentAsync({ type: 'application/pdf' });
+      const result = await DocumentPicker.getDocumentAsync({
+        type: "application/pdf",
+      });
       if (!result.canceled && result.assets && result.assets.length > 0) {
         setSelectedResume(result);
       }
     } catch (err) {
-      console.error('Error picking document:', err);
-      Alert.alert('Error', 'Failed to pick document');
+      console.error("Error picking document:", err);
+      Alert.alert("Error", "Failed to pick document");
     }
   };
 
   const handleConvertToLatex = async () => {
     if (!preUploadedResumeUrl && !selectedResume) {
-      Alert.alert('Error', 'Please upload a resume or use your pre-uploaded resume');
+      Alert.alert(
+        "Error",
+        "Please upload a resume or use your pre-uploaded resume"
+      );
       return;
     }
 
     try {
-      const resumeUrl = selectedResume?.assets?.[0]?.uri || preUploadedResumeUrl;
+      const resumeUrl =
+        selectedResume?.assets?.[0]?.uri || preUploadedResumeUrl;
       if (!resumeUrl) {
-        throw new Error('No resume URL available');
+        throw new Error("No resume URL available");
       }
 
       const result = await convertToLatex(resumeUrl);
       if (result) {
         setLatexContent(result);
       } else {
-        Alert.alert('Error', 'Failed to convert resume to LaTeX');
+        Alert.alert("Error", "Failed to convert resume to LaTeX");
       }
     } catch (err) {
-      console.error('Error converting to LaTeX:', err);
-      Alert.alert('Error', 'Failed to convert resume to LaTeX');
+      console.error("Error converting to LaTeX:", err);
+      Alert.alert("Error", "Failed to convert resume to LaTeX");
     }
   };
 
   const handleExportToPdf = async () => {
     if (!latexContent) {
-      Alert.alert('Error', 'Please convert the resume to LaTeX first');
+      Alert.alert("Error", "Please convert the resume to LaTeX first");
       return;
     }
 
@@ -102,31 +111,42 @@ export default function ResumeMigration({
       const response = await axios.post(
         `${API_BASE_URL}/export_to_pdf`,
         { latex: latexContent },
-        { responseType: 'arraybuffer' }
+        { responseType: "arraybuffer" }
       );
-      
+
       const pdfContent = response.data;
       const pdfPath = `${FileSystem.documentDirectory}resume.pdf`;
-      
+
       // Convert ArrayBuffer to Base64
       const uint8Array = new Uint8Array(pdfContent);
-      let binaryString = uint8Array.reduce((str, byte) => str + String.fromCharCode(byte), '');
+      let binaryString = uint8Array.reduce(
+        (str, byte) => str + String.fromCharCode(byte),
+        ""
+      );
       let base64String = btoa(binaryString);
 
-      await FileSystem.writeAsStringAsync(pdfPath, base64String, { encoding: FileSystem.EncodingType.Base64 });
+      await FileSystem.writeAsStringAsync(pdfPath, base64String, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
 
-      if (Platform.OS === 'android') {
+      if (Platform.OS === "android") {
         const androidPath = `${FileSystem.cacheDirectory}resume.pdf`;
         await FileSystem.copyAsync({ from: pdfPath, to: androidPath });
-        await Sharing.shareAsync(androidPath, { UTI: 'public.pdf', mimeType: 'application/pdf' });
+        await Sharing.shareAsync(androidPath, {
+          UTI: "public.pdf",
+          mimeType: "application/pdf",
+        });
       } else {
-        await Sharing.shareAsync(pdfPath, { UTI: 'public.pdf', mimeType: 'application/pdf' });
+        await Sharing.shareAsync(pdfPath, {
+          UTI: "public.pdf",
+          mimeType: "application/pdf",
+        });
       }
 
-      Alert.alert('Success', 'PDF has been generated and saved.');
+      Alert.alert("Success", "PDF has been generated and saved.");
     } catch (err) {
-      console.error('Error exporting to PDF:', err);
-      Alert.alert('Error', 'Failed to export resume to PDF');
+      console.error("Error exporting to PDF:", err);
+      Alert.alert("Error", "Failed to export resume to PDF");
     } finally {
       setIsExporting(false);
     }
@@ -147,7 +167,7 @@ export default function ResumeMigration({
       />
       <ScrollView style={styles.container}>
         {preUploadedResumeUrl && (
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.preUploadedResumeButton}
             onPress={() => setSelectedResume(null)}
           >
@@ -161,7 +181,7 @@ export default function ResumeMigration({
         />
         {selectedResume && (
           <Text style={styles.selectedResumeText}>
-            Selected: {selectedResume.assets?.[0]?.name || 'Resume'}
+            Selected: {selectedResume.assets?.[0]?.name || "Resume"}
           </Text>
         )}
         <Button
@@ -173,7 +193,9 @@ export default function ResumeMigration({
         {latexContent && (
           <View style={styles.latexContainer}>
             <Text style={styles.latexTitle}>LaTeX Content:</Text>
-            <Text style={styles.latexText}>{latexContent.substring(0, 200)}...</Text>
+            <Text style={styles.latexText}>
+              {latexContent.substring(0, 200)}...
+            </Text>
           </View>
         )}
         <Button
@@ -197,7 +219,7 @@ const styles = StyleSheet.create({
     backgroundColor: themeColor.gray200,
     borderRadius: 5,
     marginBottom: 10,
-    alignItems: 'center',
+    alignItems: "center",
   },
   uploadButton: {
     marginBottom: 10,
@@ -216,7 +238,7 @@ const styles = StyleSheet.create({
   },
   latexTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 10,
   },
   latexText: {

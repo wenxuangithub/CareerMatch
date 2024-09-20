@@ -3,6 +3,7 @@ import { StringFormat } from "firebase/storage";
 export type MainStackParamList = {
   MainTabs: undefined;
   EditStudentProfile: undefined;
+  EditEmployerProfile: undefined;
   Search: undefined;
   Home: undefined;
   EmployerHome: undefined;
@@ -111,6 +112,10 @@ export type MainStackParamList = {
   };
   ResumeAnalysis : undefined;
   ResumeMigration: undefined;
+  JobApplicationDetails : {application: any};
+  StudentInterviewStatus: undefined;
+  ConversationPage: { applicationId: string };
+  EmployerProfile : undefined;
 };
 
 

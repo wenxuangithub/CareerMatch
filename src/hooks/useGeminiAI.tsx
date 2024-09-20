@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import axios from 'axios';
+import { useState } from "react";
+import axios from "axios";
 
 type Job = {
   companyName: string;
@@ -21,11 +21,11 @@ type UserInput = {
   targetIndustry: string;
 };
 
-const API_BASE_URL = 'http://192.168.0.106:5000';
+const API_BASE_URL = "http://10.10.5.32:5000";
 
 export const useGeminiAI = () => {
   const [recommendation, setRecommendation] = useState<Job[]>([]);
-  const [generatedResume, setGeneratedResume] = useState<string>('');
+  const [generatedResume, setGeneratedResume] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -36,18 +36,21 @@ export const useGeminiAI = () => {
     try {
       const payload = {
         pdfUrl,
-        jobs: jobs.map(job => ({
+        jobs: jobs.map((job) => ({
           ...job,
-          tags: Array.isArray(job.tags) ? job.tags : [job.tags].filter(Boolean)
-        }))
+          tags: Array.isArray(job.tags) ? job.tags : [job.tags].filter(Boolean),
+        })),
       };
 
-      console.log('Sending request to:', `${API_BASE_URL}/get_recommendations`);
-      console.log('Request payload:', JSON.stringify(payload, null, 2));
+      console.log("Sending request to:", `${API_BASE_URL}/get_recommendations`);
+      console.log("Request payload:", JSON.stringify(payload, null, 2));
 
-      const response = await axios.post(`${API_BASE_URL}/get_recommendations`, payload);
+      const response = await axios.post(
+        `${API_BASE_URL}/get_recommendations`,
+        payload
+      );
 
-      console.log('Received response:', JSON.stringify(response.data, null, 2));
+      console.log("Received response:", JSON.stringify(response.data, null, 2));
       setRecommendation(response.data);
     } catch (err) {
       handleError(err);
@@ -59,15 +62,18 @@ export const useGeminiAI = () => {
   const generateResume = async (userInput: UserInput) => {
     setLoading(true);
     setError(null);
-    setGeneratedResume('');
+    setGeneratedResume("");
 
     try {
-      console.log('Sending request to:', `${API_BASE_URL}/generate_resume`);
-      console.log('Request payload:', JSON.stringify(userInput, null, 2));
+      console.log("Sending request to:", `${API_BASE_URL}/generate_resume`);
+      console.log("Request payload:", JSON.stringify(userInput, null, 2));
 
-      const response = await axios.post(`${API_BASE_URL}/generate_resume`, userInput);
+      const response = await axios.post(
+        `${API_BASE_URL}/generate_resume`,
+        userInput
+      );
 
-      console.log('Received response:', JSON.stringify(response.data, null, 2));
+      console.log("Received response:", JSON.stringify(response.data, null, 2));
       setGeneratedResume(response.data.resume);
       return response.data.resume;
     } catch (err) {
@@ -83,12 +89,14 @@ export const useGeminiAI = () => {
     setError(null);
 
     try {
-      console.log('Sending request to:', `${API_BASE_URL}/analyze_resume`);
-      console.log('Request payload:', { resumeUrl });
+      console.log("Sending request to:", `${API_BASE_URL}/analyze_resume`);
+      console.log("Request payload:", { resumeUrl });
 
-      const response = await axios.post(`${API_BASE_URL}/analyze_resume`, { resumeUrl });
+      const response = await axios.post(`${API_BASE_URL}/analyze_resume`, {
+        resumeUrl,
+      });
 
-      console.log('Received response:', JSON.stringify(response.data, null, 2));
+      console.log("Received response:", JSON.stringify(response.data, null, 2));
       return response.data.analysis;
     } catch (err) {
       handleError(err);
@@ -103,12 +111,14 @@ export const useGeminiAI = () => {
     setError(null);
 
     try {
-      console.log('Sending request to:', `${API_BASE_URL}/convert_to_latex`);
-      console.log('Request payload:', { resumeUrl });
+      console.log("Sending request to:", `${API_BASE_URL}/convert_to_latex`);
+      console.log("Request payload:", { resumeUrl });
 
-      const response = await axios.post(`${API_BASE_URL}/convert_to_latex`, { resumeUrl });
+      const response = await axios.post(`${API_BASE_URL}/convert_to_latex`, {
+        resumeUrl,
+      });
 
-      console.log('Received response:', JSON.stringify(response.data, null, 2));
+      console.log("Received response:", JSON.stringify(response.data, null, 2));
       return response.data.latex;
     } catch (err) {
       handleError(err);
@@ -120,23 +130,25 @@ export const useGeminiAI = () => {
 
   const handleError = (err: any) => {
     if (axios.isAxiosError(err)) {
-      console.error('Axios error:', err.response?.data || err.message);
-      setError(`An error occurred: ${err.response?.data?.error || err.message}`);
+      console.error("Axios error:", err.response?.data || err.message);
+      setError(
+        `An error occurred: ${err.response?.data?.error || err.message}`
+      );
     } else {
-      console.error('Unknown error:', err);
-      setError('An unknown error occurred. Please try again.');
+      console.error("Unknown error:", err);
+      setError("An unknown error occurred. Please try again.");
     }
   };
 
-  return { 
-    recommendation, 
-    generatedResume, 
-    loading, 
-    error, 
-    getRecommendation, 
+  return {
+    recommendation,
+    generatedResume,
+    loading,
+    error,
+    getRecommendation,
     generateResume,
     analyzeResume,
     convertToLatex,
-    API_BASE_URL 
+    API_BASE_URL,
   };
 };

@@ -343,7 +343,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   questionItem: {
-    backgroundColor: "#f0f0f0",
+    backgroundColor: "grey",
     borderRadius: 10,
     padding: 15,
     marginBottom: 15,

@@ -1,13 +1,43 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
-import { Layout, Text, TopNav, useTheme, themeColor, Button } from "react-native-rapi-ui";
+import React, { useState } from "react";
+import {
+  View,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Alert,
+} from "react-native";
+import {
+  Layout,
+  Text,
+  TopNav,
+  useTheme,
+  themeColor,
+  Button,
+} from "react-native-rapi-ui";
 import { Ionicons } from "@expo/vector-icons";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { MainStackParamList } from "./types/navigation";
-import { getAuth } from 'firebase/auth';
-import { getFirestore, doc, getDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { getAuth } from "firebase/auth";
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  addDoc,
+  collection,
+  serverTimestamp,
+} from "firebase/firestore";
+import axios from "axios";
 
 type JobDetailsProps = NativeStackScreenProps<MainStackParamList, "JobDetails">;
+
+type Analysis = {
+  skills_match: string[];
+  education_match: string;
+  job_description_keywords: string[];
+  interested_part: string;
+  error?: string;
+  raw_response?: string;
+};
 
 export default function JobDetails({ route, navigation }: JobDetailsProps) {
   const { isDarkmode } = useTheme();
@@ -17,16 +47,19 @@ export default function JobDetails({ route, navigation }: JobDetailsProps) {
   const auth = getAuth();
   const db = getFirestore();
 
+  const API_BASE_URL = "http://10.10.5.32:5000"; // Replace with your actual API URL
+
   const handleApply = async () => {
     if (!auth.currentUser) {
       Alert.alert("Error", "You must be logged in to apply for jobs.");
       return;
     }
 
-    // Check if eventId and companyId are defined
     if (!eventId || !companyId) {
-      Alert.alert("Error", "Missing event or company information. Please try again later.");
-      Alert.alert(companyId);
+      Alert.alert(
+        "Error",
+        "Missing event or company information. Please try again later."
+      );
       return;
     }
 
@@ -41,11 +74,41 @@ export default function JobDetails({ route, navigation }: JobDetailsProps) {
         Alert.alert(
           "Resume Required",
           "You need to upload a resume before applying for jobs. Please update your profile with a resume.",
-          [
-            { text: "OK", onPress: () => navigation.navigate("StudentProfile") }
-          ]
+          [{ text: "OK", onPress: () => navigation.navigate("StudentProfile") }]
         );
         return;
+      }
+
+      // Process submitted resume
+      let analysis: Analysis;
+      try {
+        const analysisResponse = await axios.post(
+          `${API_BASE_URL}/process_submitted_resume`,
+          {
+            resumeUrl: userData.pdfURL,
+            job: job,
+          }
+        );
+        analysis = analysisResponse.data.analysis;
+
+        // Ensure all expected fields are present
+        analysis = {
+          skills_match: analysis.skills_match || [],
+          education_match: analysis.education_match || "Unable to determine",
+          job_description_keywords: analysis.job_description_keywords || [],
+          interested_part: analysis.interested_part || "Unable to determine",
+          ...(analysis.error && { error: analysis.error }),
+          ...(analysis.raw_response && { raw_response: analysis.raw_response }),
+        };
+      } catch (error) {
+        console.error("Error processing resume:", error);
+        analysis = {
+          error: "Failed to process resume",
+          skills_match: [],
+          education_match: "Unable to determine",
+          job_description_keywords: [],
+          interested_part: "Unable to determine",
+        };
       }
 
       // Prepare the application data
@@ -55,16 +118,29 @@ export default function JobDetails({ route, navigation }: JobDetailsProps) {
         companyId: companyId,
         role: job.role || "Unspecified Role",
         date: serverTimestamp(),
+        analysis: analysis,
+        resumeURL: userData.pdfURL,
+        user: userData.email,
+        status: "awaiting",
       };
 
       // Add application to JobApplication collection
-      const docRef = await addDoc(collection(db, "JobApplication"), applicationData);
+      const docRef = await addDoc(
+        collection(db, "JobApplication"),
+        applicationData
+      );
 
       console.log("Application submitted with ID: ", docRef.id);
-      Alert.alert("Success", "Your application has been submitted successfully!");
+      Alert.alert(
+        "Success",
+        "Your application has been submitted successfully!"
+      );
     } catch (error) {
       console.error("Error applying for job:", error);
-      Alert.alert("Error", "Failed to submit your application. Please try again.");
+      Alert.alert(
+        "Error",
+        "Failed to submit your application. Please try again."
+      );
     } finally {
       setIsApplying(false);
     }
@@ -80,25 +156,43 @@ export default function JobDetails({ route, navigation }: JobDetailsProps) {
       <>
         <View style={styles.header}>
           <Text style={styles.jobTitle}>{job.role || "Unspecified Role"}</Text>
-          <Text style={styles.companyName}>{companyName || "Unspecified Company"}</Text>
-          <Text style={styles.jobLocation}>{job.location || "Location not specified"}</Text>
+          <Text style={styles.companyName}>
+            {companyName || "Unspecified Company"}
+          </Text>
+          <Text style={styles.jobLocation}>
+            {job.location || "Location not specified"}
+          </Text>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Job Details</Text>
           <View style={styles.detailItem}>
-            <Ionicons name="business-outline" size={20} color={themeColor.primary} />
-            <Text style={styles.detailText}>{job.classification || "Classification not specified"}</Text>
+            <Ionicons
+              name="business-outline"
+              size={20}
+              color={themeColor.primary}
+            />
+            <Text style={styles.detailText}>
+              {job.classification || "Classification not specified"}
+            </Text>
           </View>
           <View style={styles.detailItem}>
-            <Ionicons name="time-outline" size={20} color={themeColor.primary} />
-            <Text style={styles.detailText}>{job.time || "Time not specified"}</Text>
+            <Ionicons
+              name="time-outline"
+              size={20}
+              color={themeColor.primary}
+            />
+            <Text style={styles.detailText}>
+              {job.time || "Time not specified"}
+            </Text>
           </View>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Job Description</Text>
-          <Text style={styles.description}>{job.descriptions || "No description available"}</Text>
+          <Text style={styles.description}>
+            {job.descriptions || "No description available"}
+          </Text>
         </View>
       </>
     );
@@ -140,7 +234,7 @@ const styles = StyleSheet.create({
   },
   jobTitle: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 5,
   },
   companyName: {
@@ -157,12 +251,12 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 10,
   },
   detailItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 10,
   },
   detailText: {

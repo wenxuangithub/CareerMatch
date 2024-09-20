@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
-from recommendations import get_job_recommendations, generate_resume
+from recommendations import get_job_recommendations, generate_resume, process_submitted_resume
 from resume_utils import analyze_resume, convert_to_latex, export_to_pdf
 import logging
 import io
@@ -117,5 +117,28 @@ def export_to_pdf_route():
         app.logger.error(f"An error occurred during PDF export: {str(e)}")
         return jsonify({"error": "An unexpected error occurred"}), 500
 
+@app.route('/process_submitted_resume', methods=['POST'])
+def process_submitted_resume_route():
+    try:
+        data = request.json
+        app.logger.debug(f"Received data for resume processing: {data}")
+
+        resume_url = data.get('resumeUrl')
+        job = data.get('job')
+        if not resume_url or not job:
+            return jsonify({"error": "Missing resume URL or job data"}), 400
+
+        analysis = process_submitted_resume(resume_url, job)
+
+        if isinstance(analysis, str) and analysis.startswith("Error"):
+            return jsonify({"error": analysis}), 500
+
+        return jsonify({"analysis": analysis})
+    except Exception as e:
+        app.logger.error(f"An error occurred during resume processing: {str(e)}")
+        return jsonify({"error": "An unexpected error occurred"}), 500
+
+
+
 if __name__ == '__main__':
-    app.run(host='192.168.0.106', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)
