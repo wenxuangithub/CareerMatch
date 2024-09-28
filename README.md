@@ -1,5 +1,5 @@
 <p align="center">
-<img src="README/CareerMatch.png" alt="CareerMatch banner" width="700" height="400"> 
+<img src="README/CareerMatch.png" alt="CareerMatch banner" width="100%" height="100%"> 
   </a>
 </p>
 
@@ -7,7 +7,7 @@
 <p align="center">
   Enhancing connections between students and employers.
   <br>
-  <a href="https://wenxuanlee.medium.com/"><strong>Read Article »</strong></a>
+  <a href="https://wenxuanlee.medium.com/i-built-a-mobile-app-to-help-students-find-internships-at-career-fairs-02930d7c67fa"><strong>Read Article »</strong></a>
   <br>
   <br>
   ·
