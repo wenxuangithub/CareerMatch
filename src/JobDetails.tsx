@@ -47,7 +47,8 @@ export default function JobDetails({ route, navigation }: JobDetailsProps) {
   const auth = getAuth();
   const db = getFirestore();
 
-  const API_BASE_URL = "http://10.10.5.32:5000"; // Replace with your actual API URL
+  //I will move this part to the hooks later..
+  const API_BASE_URL = "http://10.10.5.32:5000";
 
   const handleApply = async () => {
     if (!auth.currentUser) {

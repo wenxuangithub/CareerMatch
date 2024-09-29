@@ -201,3 +201,7 @@ Here are some areas I am exploring for future development:
 7. Offline Functionality
    - Implement offline mode for basic app functionality without internet connection
    - Ensure data synchronization when connection is restored
+
+## License
+
+Code released under the MIT License.

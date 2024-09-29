@@ -16,6 +16,7 @@
     "@react-navigation/native": "^6.1.18",
     "@react-navigation/native-stack": "^6.11.0",
     "axios": "^1.7.5",
+    "crypto-es": "^2.1.0",
     "expo": "~51.0.26",
     "expo-barcode-scanner": "~13.0.1",
     "expo-camera": "~15.0.14",
@@ -38,10 +39,10 @@
     "react-native-paper": "^5.12.5",
     "react-native-qrcode-svg": "^6.3.2",
     "react-native-rapi-ui": "^0.2.1",
+    "react-native-svg": "15.2.0",
     "react-native-view-shot": "3.8.0",
     "react-native-web": "~0.19.10",
-    "react-native-webview": "13.8.6",
-    "react-native-svg": "15.2.0"
+    "react-native-webview": "13.8.6"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
