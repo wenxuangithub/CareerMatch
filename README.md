@@ -44,7 +44,7 @@ The primary goals of this project are to address key issues in traditional caree
 - Event Creation and Management
 - QR Code Generation and Scanning feature
 - Digital Card Identity for efficient information exchange
-- AI Resume Builder and Smart Resume Screening
+- AI Resume Builder and Smart Resume Screening using GenAI
 - Cloud Documentation for company brochures and online resume submission
 - Questionnaire System for event feedback
 - CSV Exportation for event questionnaires and submitted resumes
